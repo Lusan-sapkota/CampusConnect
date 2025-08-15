@@ -37,16 +37,25 @@ class VerifyOTPRequest(BaseModel):
     """Request schema for verifying OTP."""
     email: EmailStr
     otp: str = Field(..., min_length=4, max_length=10)
-    purpose: str = Field("authentication", pattern="^(authentication|password_reset)$")
+    purpose: str = Field("authentication", pattern="^(authentication|password_reset|signup)$")
     
     class Config:
         populate_by_name = True
 
 
 class LoginRequest(BaseModel):
-    """Request schema for user login."""
+    """Request schema for user login with OTP."""
     email: EmailStr
     otp: str = Field(..., min_length=4, max_length=10)
+    
+    class Config:
+        populate_by_name = True
+
+
+class PasswordLoginRequest(BaseModel):
+    """Request schema for user login with password."""
+    email: EmailStr
+    password: str = Field(..., min_length=1, max_length=128)
     
     class Config:
         populate_by_name = True
@@ -224,24 +233,71 @@ def login():
         except ValidationError as e:
             return create_validation_error_response(e.errors())
         
-        # Authenticate user
-        result = AuthService.authenticate_user(
+        # Authenticate user with OTP
+        result = AuthService.authenticate_with_otp(
             email=login_request.email,
-            otp=login_request.otp
+            otp_code=login_request.otp
         )
         
         if result['success']:
             response_data = {
-                'user_id': result['user_id'],
-                'email': result['email'],
+                'user_id': result['user_data']['user_id'],
+                'email': result['user_data']['email'],
+                'first_name': result['user_data']['first_name'],
+                'last_name': result['user_data']['last_name'],
+                'full_name': result['user_data']['full_name'],
+                'profile_picture': result['user_data']['profile_picture'],
                 'session_token': result['session_token']
             }
             return create_success_response(result['message'], response_data)
         else:
-            return create_bad_request_response(result['message'], {
-                'error': result.get('error'),
-                'remaining_attempts': result.get('remaining_attempts')
-            })
+            return create_bad_request_response(result['message'])
+        
+    except Exception as e:
+        return create_internal_error_response(str(e))
+
+
+@auth_bp.route('/auth/login-password', methods=['POST'])
+def login_with_password():
+    """
+    Login user with email and password.
+    
+    Returns:
+        JSON response with login result and session token
+    """
+    try:
+        # Validate request format
+        validation_error = handle_request_validation(request, required_json=True)
+        if validation_error:
+            return validation_error
+        
+        request_data = request.get_json()
+        
+        # Validate request data
+        try:
+            login_request = PasswordLoginRequest(**request_data)
+        except ValidationError as e:
+            return create_validation_error_response(e.errors())
+        
+        # Authenticate user with password
+        result = AuthService.authenticate_with_password(
+            email=login_request.email,
+            password=login_request.password
+        )
+        
+        if result['success']:
+            response_data = {
+                'user_id': result['user_data']['user_id'],
+                'email': result['user_data']['email'],
+                'first_name': result['user_data']['first_name'],
+                'last_name': result['user_data']['last_name'],
+                'full_name': result['user_data']['full_name'],
+                'profile_picture': result['user_data']['profile_picture'],
+                'session_token': result['session_token']
+            }
+            return create_success_response(result['message'], response_data)
+        else:
+            return create_bad_request_response(result['message'])
         
     except Exception as e:
         return create_internal_error_response(str(e))
@@ -393,9 +449,19 @@ def get_profile():
         result = AuthService.verify_session(session_token)
         
         if result['valid']:
+            user_data = result['user_data']
             response_data = {
-                'user_id': result['user_id'],
-                'email': result['email'],
+                'user_id': user_data['user_id'],
+                'email': user_data['email'],
+                'first_name': user_data.get('first_name'),
+                'last_name': user_data.get('last_name'),
+                'full_name': user_data.get('full_name'),
+                'bio': user_data.get('bio'),
+                'phone': user_data.get('phone'),
+                'major': user_data.get('major'),
+                'year_of_study': user_data.get('year_of_study'),
+                'user_role': user_data.get('user_role'),
+                'profile_picture': user_data.get('profile_picture'),
                 'session_token': session_token
             }
             return create_success_response("Profile retrieved successfully", response_data)

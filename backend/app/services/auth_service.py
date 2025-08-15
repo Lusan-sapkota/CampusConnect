@@ -117,10 +117,43 @@ class AuthService:
                 # Check if user already exists
                 existing_user = db.query(User).filter(User.email == signup_data['email'].lower()).first()
                 if existing_user:
-                    return {
-                        'success': False,
-                        'message': 'An account with this email already exists'
-                    }
+                    # If user exists but is not verified, allow resending OTP
+                    if not existing_user.is_verified:
+                        # Generate new OTP for existing unverified user
+                        otp_code = cls._generate_otp()
+                        otp = OTPCode(
+                            user_id=existing_user.id,
+                            code=otp_code,
+                            purpose='signup',
+                            expires_at=datetime.utcnow() + timedelta(minutes=10)
+                        )
+                        db.add(otp)
+                        
+                        # Send verification email
+                        try:
+                            EmailService.send_otp_email(
+                                to_email=existing_user.email,
+                                recipient_name=existing_user.full_name,
+                                otp=otp_code,
+                                purpose='signup'
+                            )
+                        except Exception as e:
+                            logger.error(f"Failed to send OTP email: {str(e)}")
+                        
+                        db.commit()
+                        
+                        return {
+                            'success': True,
+                            'message': 'Verification code sent to your email.',
+                            'user_id': existing_user.id,
+                            'email': existing_user.email,
+                            'otp_code': otp_code  # For development only
+                        }
+                    else:
+                        return {
+                            'success': False,
+                            'message': 'An account with this email already exists and is verified. Please login instead.'
+                        }
                 
                 # Create new user
                 user = User(
@@ -202,6 +235,260 @@ class AuthService:
                 'details': {'error': str(e)}
             }
     
+    @classmethod
+    def send_authentication_otp(cls, email: str, user_name: str = None) -> Dict[str, Any]:
+        """
+        Send OTP for user authentication/login.
+        
+        Args:
+            email: User email
+            user_name: User name (optional)
+            
+        Returns:
+            Dictionary with send result
+        """
+        try:
+            with get_db() as db:
+                # Find user
+                user = db.query(User).filter(User.email == email.lower()).first()
+                if not user:
+                    return {
+                        'success': False,
+                        'message': 'User not found'
+                    }
+                
+                # Generate OTP
+                otp_code = cls._generate_otp()
+                otp = OTPCode(
+                    user_id=user.id,
+                    code=otp_code,
+                    purpose='authentication',
+                    expires_at=datetime.utcnow() + timedelta(minutes=10)
+                )
+                db.add(otp)
+                
+                # Send email
+                try:
+                    EmailService.send_otp_email(
+                        to_email=user.email,
+                        recipient_name=user_name or user.full_name,
+                        otp=otp_code,
+                        purpose='authentication'
+                    )
+                except Exception as e:
+                    logger.error(f"Failed to send authentication OTP email: {str(e)}")
+                
+                db.commit()
+                
+                return {
+                    'success': True,
+                    'message': 'Authentication code sent to your email',
+                    'expiry_minutes': 10
+                }
+                
+        except Exception as e:
+            logger.error(f"Error sending authentication OTP: {str(e)}")
+            return {
+                'success': False,
+                'message': 'Failed to send authentication code'
+            }
+    
+    @classmethod
+    def send_password_reset_otp(cls, email: str, user_name: str = None) -> Dict[str, Any]:
+        """
+        Send OTP for password reset.
+        
+        Args:
+            email: User email
+            user_name: User name (optional)
+            
+        Returns:
+            Dictionary with send result
+        """
+        try:
+            with get_db() as db:
+                # Find user
+                user = db.query(User).filter(User.email == email.lower()).first()
+                if not user:
+                    return {
+                        'success': False,
+                        'message': 'User not found'
+                    }
+                
+                # Generate OTP
+                otp_code = cls._generate_otp()
+                otp = OTPCode(
+                    user_id=user.id,
+                    code=otp_code,
+                    purpose='password_reset',
+                    expires_at=datetime.utcnow() + timedelta(minutes=10)
+                )
+                db.add(otp)
+                
+                # Send email
+                try:
+                    EmailService.send_otp_email(
+                        to_email=user.email,
+                        recipient_name=user_name or user.full_name,
+                        otp=otp_code,
+                        purpose='password_reset'
+                    )
+                except Exception as e:
+                    logger.error(f"Failed to send password reset OTP email: {str(e)}")
+                
+                db.commit()
+                
+                return {
+                    'success': True,
+                    'message': 'Password reset code sent to your email',
+                    'expiry_minutes': 10
+                }
+                
+        except Exception as e:
+            logger.error(f"Error sending password reset OTP: {str(e)}")
+            return {
+                'success': False,
+                'message': 'Failed to send password reset code'
+            }
+
+    @classmethod
+    def authenticate_with_password(cls, email: str, password: str) -> Dict[str, Any]:
+        """
+        Authenticate user with email and password.
+        
+        Args:
+            email: User email
+            password: User password
+            
+        Returns:
+            Dictionary with authentication result
+        """
+        try:
+            with get_db() as db:
+                # Find user
+                user = db.query(User).filter(User.email == email.lower()).first()
+                if not user:
+                    return {
+                        'success': False,
+                        'message': 'Invalid email or password'
+                    }
+                
+                # Check if user is verified
+                if not user.is_verified:
+                    return {
+                        'success': False,
+                        'message': 'Please verify your email before logging in'
+                    }
+                
+                # Check password
+                if not user.check_password(password):
+                    return {
+                        'success': False,
+                        'message': 'Invalid email or password'
+                    }
+                
+                # Update last login
+                user.last_login = datetime.utcnow()
+                
+                # Create session
+                session_token = cls._generate_session_token()
+                session = UserSession(
+                    user_id=user.id,
+                    session_token=session_token,
+                    expires_at=datetime.utcnow() + timedelta(days=30)
+                )
+                db.add(session)
+                
+                db.commit()
+                
+                logger.info(f"User logged in with password: {user.email}")
+                return {
+                    'success': True,
+                    'message': 'Login successful',
+                    'user_data': user.to_dict(),
+                    'session_token': session_token
+                }
+                
+        except Exception as e:
+            logger.error(f"Error in password authentication: {str(e)}")
+            return {
+                'success': False,
+                'message': 'Authentication failed'
+            }
+
+    @classmethod
+    def authenticate_with_otp(cls, email: str, otp_code: str) -> Dict[str, Any]:
+        """
+        Authenticate user with email and OTP.
+        
+        Args:
+            email: User email
+            otp_code: OTP code
+            
+        Returns:
+            Dictionary with authentication result
+        """
+        try:
+            with get_db() as db:
+                # Find user
+                user = db.query(User).filter(User.email == email.lower()).first()
+                if not user:
+                    return {
+                        'success': False,
+                        'message': 'User not found'
+                    }
+                
+                # Find valid OTP
+                otp = db.query(OTPCode).filter(
+                    OTPCode.user_id == user.id,
+                    OTPCode.code == otp_code,
+                    OTPCode.purpose == 'authentication'
+                ).first()
+                
+                if not otp:
+                    return {
+                        'success': False,
+                        'message': 'Invalid authentication code'
+                    }
+                
+                if not otp.is_valid():
+                    return {
+                        'success': False,
+                        'message': 'Authentication code has expired or been used'
+                    }
+                
+                # Mark OTP as used
+                otp.mark_as_used()
+                
+                # Update last login
+                user.last_login = datetime.utcnow()
+                
+                # Create session
+                session_token = cls._generate_session_token()
+                session = UserSession(
+                    user_id=user.id,
+                    session_token=session_token,
+                    expires_at=datetime.utcnow() + timedelta(days=30)
+                )
+                db.add(session)
+                
+                db.commit()
+                
+                logger.info(f"User logged in with OTP: {user.email}")
+                return {
+                    'success': True,
+                    'message': 'Login successful',
+                    'user_data': user.to_dict(),
+                    'session_token': session_token
+                }
+                
+        except Exception as e:
+            logger.error(f"Error in OTP authentication: {str(e)}")
+            return {
+                'success': False,
+                'message': 'Authentication failed'
+            }
+
     @classmethod
     def verify_signup_otp(cls, email: str, otp_code: str) -> Dict[str, Any]:
         """
@@ -392,9 +679,12 @@ class AuthService:
                 session.last_used = datetime.utcnow()
                 db.commit()
                 
+                user_data = session.user.to_dict()
                 return {
                     'valid': True,
-                    'user_data': session.user.to_dict()
+                    'user_data': user_data,
+                    'user_id': user_data['user_id'],
+                    'email': user_data['email']
                 }
                 
         except Exception as e:

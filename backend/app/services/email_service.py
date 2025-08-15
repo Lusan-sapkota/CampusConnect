@@ -54,15 +54,18 @@ class EmailService:
             Exception: If SMTP connection fails
         """
         try:
-            mail_server = current_app.config.get('MAIL_SERVER')
-            mail_port = current_app.config.get('MAIL_PORT')
-            mail_use_tls = current_app.config.get('MAIL_USE_TLS')
-            mail_use_ssl = current_app.config.get('MAIL_USE_SSL')
+            # Get config values with fallbacks for testing
+            mail_server = current_app.config.get('MAIL_SERVER') or 'smtp.zoho.com'
+            mail_port = current_app.config.get('MAIL_PORT') or 587
+            mail_use_tls = current_app.config.get('MAIL_USE_TLS', True)
+            mail_use_ssl = current_app.config.get('MAIL_USE_SSL', False)
             mail_username = current_app.config.get('MAIL_USERNAME')
             mail_password = current_app.config.get('MAIL_PASSWORD')
             
+            logger.info(f"Email config - Server: {mail_server}, Port: {mail_port}, TLS: {mail_use_tls}, Username: {mail_username}")
+            
             if not mail_server or not mail_username or not mail_password:
-                raise ValueError("Email configuration is incomplete. Please check MAIL_SERVER, MAIL_USERNAME, and MAIL_PASSWORD.")
+                raise ValueError(f"Email configuration is incomplete. Server: {mail_server}, Username: {mail_username}, Password: {'***' if mail_password else 'None'}")
             
             # Create SMTP connection
             if mail_use_ssl:
@@ -79,6 +82,7 @@ class EmailService:
                     server.starttls(context=context)
             
             # Login to the server
+            logger.info(f"Attempting SMTP login with username: {mail_username}")
             server.login(mail_username, mail_password)
             
             logger.info(f"SMTP connection established successfully to {mail_server}:{mail_port}")

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Eye, EyeOff, Upload, X, User, Mail, Phone, BookOpen, Calendar, FileText, Camera } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { OTPInput } from './OTPInput';
@@ -96,7 +96,6 @@ const CompleteSignupForm: React.FC<CompleteSignupFormProps> = ({ onSuccess, onSw
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [currentStep, setCurrentStep] = useState<'form' | 'otp' | 'success'>('form');
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [developmentOTP, setDevelopmentOTP] = useState<string | null>(null); //REMOVE THIS IN PRODUCTION
 
   const [formData, setFormData] = useState<SignupFormData>({
     email: '',
@@ -256,10 +255,6 @@ const CompleteSignupForm: React.FC<CompleteSignupFormProps> = ({ onSuccess, onSw
 
     if (result.success) {
       setCurrentStep('otp');
-      // Store OTP for development display
-      if (result.otp) {
-        setDevelopmentOTP(result.otp);
-      }
     }
   };
 
@@ -302,13 +297,6 @@ const CompleteSignupForm: React.FC<CompleteSignupFormProps> = ({ onSuccess, onSw
           <p className="text-gray-600 dark:text-gray-300">
             We've sent a verification code to <strong>{formData.email}</strong>
           </p>
-          {developmentOTP && (
-            <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-              <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                <strong>Development Mode:</strong> Your verification code is <strong>{developmentOTP}</strong>
-              </p>
-            </div>
-          )}
         </div>
 
         <OTPVerificationForm
@@ -326,9 +314,6 @@ const CompleteSignupForm: React.FC<CompleteSignupFormProps> = ({ onSuccess, onSw
               bio: formData.bio,
               profilePicture: formData.profilePicture,
             });
-            if (result.otp) {
-              setDevelopmentOTP(result.otp);
-            }
             return result.success;
           }}
           isLoading={state.isLoading}
@@ -346,6 +331,12 @@ const CompleteSignupForm: React.FC<CompleteSignupFormProps> = ({ onSuccess, onSw
   }
 
   if (currentStep === 'success') {
+    useEffect(() => {
+      const timer = setTimeout(() => {
+        onSuccess?.();
+      }, 2000);
+      return () => clearTimeout(timer);
+    }, []);
     return (
       <div className="max-w-md mx-auto text-center">
         <div className="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-4">

@@ -210,6 +210,16 @@ export const authApi = {
   },
 
   /**
+   * Login with email and password
+   */
+  loginWithPassword: async (email: string, password: string): Promise<AuthResponse> => {
+    return apiRequest<AuthResponse>('/auth/login-password', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
+  },
+
+  /**
    * Reset password with OTP
    */
   resetPassword: async (data: ResetPasswordRequest): Promise<ApiResponse> => {
