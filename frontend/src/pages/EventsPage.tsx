@@ -2,8 +2,12 @@ import React, { useState } from 'react';
 import EventCard from '../components/EventCard';
 import { events } from '../data/events';
 import { Search, Calendar } from 'lucide-react';
+import lenisManager from '../utils/lenis';
 
 const EventsPage: React.FC = () => {
+  React.useEffect(() => {
+    lenisManager.getInstance()?.scrollTo(0);
+  }, []);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
 

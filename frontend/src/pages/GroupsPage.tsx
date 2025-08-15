@@ -1,9 +1,13 @@
 import React, { useState } from 'react';
 import GroupCard from '../components/GroupCard';
 import { groups } from '../data/groups';
-import { Search } from 'lucide-react';
+import { Search, Users } from 'lucide-react';
+import lenisManager from '../utils/lenis';
 
 const GroupsPage: React.FC = () => {
+  React.useEffect(() => {
+    lenisManager.getInstance()?.scrollTo(0);
+  }, []);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
 
