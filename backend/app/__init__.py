@@ -1,0 +1,1 @@
+# Flask application factory will be implemented here
