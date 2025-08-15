@@ -16,6 +16,12 @@ CampusConnect is a modern campus social and community engagement platform. It en
 
 ---
 
+## 🌐 Demo Frontend
+
+[CampusConnect Demo](https://campus-connect-rho-swart.vercel.app/)
+
+> This is a frontend-only demo. For full functionality, clone the repository and run both backend and frontend locally.
+
 ## ⚡️ Quick Start
 
 ### 1. Backend Setup

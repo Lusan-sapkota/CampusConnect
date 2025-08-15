@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Authentication - Campus Connect</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../css/style.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Authentication";
+        var mkdocs_page_input_path = "authentication\\index.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> Campus Connect
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../api/">API</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../author/">Author</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../contributing/">Contributing</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../development/">Development</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../faq/">FAQ</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../features/">Features</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../futurechanges/">Future Changes</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../images/">Images</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../installiation/">Installation</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../uninstall/">Uninstall</a>
+                </li>
+              </ul>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="#">Authentication</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#features">🚀 Features</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#authentication-features">Authentication Features</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#profile-management">Profile Management</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#uiux-features">UI/UX Features</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#complete-file-structure">📁 Complete File Structure</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#backend-endpoints">🔧 Backend Endpoints</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#authentication-endpoints">Authentication Endpoints</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#profile-management-endpoints">Profile Management Endpoints</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#complete-usage-examples">🎯 Complete Usage Examples</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#signup-flow">Signup Flow</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#profile-management_1">Profile Management</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#enhanced-security-features">🔐 Enhanced Security Features</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#email-domain-validation">Email Domain Validation</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#password-security">Password Security</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#profile-picture-security">Profile Picture Security</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#form-validation">Form Validation</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#enhanced-ui-components">🎨 Enhanced UI Components</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#signupform">SignupForm</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#profilepicture">ProfilePicture</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#enhanced-userprofile">Enhanced UserProfile</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#enhanced-state-management">🔄 Enhanced State Management</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#signup-state">Signup State</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#profile-state">Profile State</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#enhanced-auth-user">Enhanced Auth User</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#getting-started">🚀 Getting Started</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#1-complete-app-setup">1. Complete App Setup</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#2-use-complete-authentication">2. Use Complete Authentication</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#configuration">🔧 Configuration</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#campus-email-domains">Campus Email Domains</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#profile-picture-settings">Profile Picture Settings</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#testing-features">🧪 Testing Features</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#mobile-responsiveness">📱 Mobile Responsiveness</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#complete-feature-set">🎉 Complete Feature Set</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#user-registration">✅ User Registration</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#authentication">✅ Authentication</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#profile-management_2">✅ Profile Management</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#security">✅ Security</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#user-experience">✅ User Experience</a>
+    </li>
+        </ul>
+    </li>
+    </ul>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../usage/">Usage</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../license/">License</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">Campus Connect</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Authentication</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="campusconnect-complete-authentication-system">CampusConnect Complete Authentication System</h1>
+<p>This document describes the comprehensive authentication system implemented for CampusConnect, including signup with email validation, OTP-based login, password reset, profile management, and profile pictures.</p>
+<h2 id="features">🚀 Features</h2>
+<h3 id="authentication-features">Authentication Features</h3>
+<ul>
+<li><strong>Campus Email Signup</strong>: Restricted to approved campus domains</li>
+<li><strong>Form Validation</strong>: Real-time password strength and validation</li>
+<li><strong>OTP-based Login</strong>: Secure email-based authentication</li>
+<li><strong>Password Reset</strong>: Complete forgot password flow with OTP</li>
+<li><strong>Session Management</strong>: JWT-like session tokens with automatic expiration</li>
+</ul>
+<h3 id="profile-management">Profile Management</h3>
+<ul>
+<li><strong>Profile Pictures</strong>: Upload, display, and delete profile pictures</li>
+<li><strong>Profile Information</strong>: Full name, bio, phone, major, year of study</li>
+<li><strong>Real-time Updates</strong>: Instant profile updates with validation</li>
+<li><strong>Password Change</strong>: Secure password change functionality</li>
+</ul>
+<h3 id="uiux-features">UI/UX Features</h3>
+<ul>
+<li><strong>Responsive Design</strong>: Mobile-friendly components</li>
+<li><strong>Real-time Validation</strong>: Instant feedback on form fields</li>
+<li><strong>Loading States</strong>: Clear loading indicators</li>
+<li><strong>Error Handling</strong>: Comprehensive error messages</li>
+<li><strong>Drag &amp; Drop</strong>: Profile picture upload with drag &amp; drop</li>
+</ul>
+<h2 id="complete-file-structure">📁 Complete File Structure</h2>
+<pre><code>frontend/src/
+├── api/
+│   ├── api.ts              # Complete API client with all auth endpoints
+│   ├── types.ts            # All TypeScript type definitions
+│   └── index.ts            # API exports
+├── contexts/
+│   └── AuthContext.tsx     # Authentication context provider
+├── hooks/
+│   ├── useOTP.ts          # OTP management hook
+│   ├── usePasswordReset.ts # Password reset flow hook
+│   ├── useSignup.ts       # Signup flow hook
+│   ├── useProfile.ts      # Profile management hook
+│   └── index.ts           # Hook exports
+├── components/auth/
+│   ├── LoginForm.tsx      # Login form with OTP
+│   ├── SignupForm.tsx     # Complete signup form with validation
+│   ├── ForgotPasswordForm.tsx # Password reset form
+│   ├── OTPInput.tsx       # Reusable OTP input component
+│   ├── ProtectedRoute.tsx # Route protection component
+│   ├── UserProfile.tsx    # Complete profile management
+│   ├── ProfilePicture.tsx # Profile picture component
+│   └── index.ts           # Component exports
+├── pages/
+│   ├── AuthPage.tsx       # Main authentication page
+│   ├── ProfilePage.tsx    # Dedicated profile page
+│   └── AuthDemoPage.tsx   # Demo/testing page
+└── COMPLETE-AUTH-SYSTEM.md # This documentation
+
+backend/app/routes/
+└── auth.py                # Complete backend with all endpoints
+</code></pre>
+<h2 id="backend-endpoints">🔧 Backend Endpoints</h2>
+<h3 id="authentication-endpoints">Authentication Endpoints</h3>
+<ul>
+<li><code>POST /api/auth/signup</code> - Register new user with campus email validation</li>
+<li><code>POST /api/auth/send-otp</code> - Send OTP to email</li>
+<li><code>POST /api/auth/verify-otp</code> - Verify OTP code</li>
+<li><code>POST /api/auth/login</code> - Login with email and OTP</li>
+<li><code>POST /api/auth/logout</code> - Logout and invalidate session</li>
+<li><code>POST /api/auth/reset-password</code> - Reset password with OTP</li>
+</ul>
+<h3 id="profile-management-endpoints">Profile Management Endpoints</h3>
+<ul>
+<li><code>GET /api/auth/profile</code> - Get current user profile</li>
+<li><code>PUT /api/auth/profile</code> - Update user profile information</li>
+<li><code>POST /api/auth/profile/picture</code> - Upload profile picture</li>
+<li><code>DELETE /api/auth/profile/picture</code> - Delete profile picture</li>
+</ul>
+<h2 id="complete-usage-examples">🎯 Complete Usage Examples</h2>
+<h3 id="signup-flow">Signup Flow</h3>
+<pre><code class="language-tsx">import { useSignup } from '../hooks/useSignup';
+
+function SignupExample() {
+  const { state, signup } = useSignup();
+
+  const handleSignup = async () =&gt; {
+    const success = await signup({
+      email: 'student@university.edu',
+      full_name: 'John Doe',
+      password: 'SecurePass123!',
+      confirm_password: 'SecurePass123!',
+      terms_accepted: true
+    });
+
+    if (success) {
+      console.log('Account created successfully');
+    }
+  };
+
+  return (
+    &lt;div&gt;
+      &lt;button onClick={handleSignup} disabled={state.isLoading}&gt;
+        {state.isLoading ? 'Creating Account...' : 'Sign Up'}
+      &lt;/button&gt;
+      {state.error &amp;&amp; &lt;p className=&quot;error&quot;&gt;{state.error}&lt;/p&gt;}
+    &lt;/div&gt;
+  );
+}
+</code></pre>
+<h3 id="profile-management_1">Profile Management</h3>
+<pre><code class="language-tsx">import { useProfile } from '../hooks/useProfile';
+import { ProfilePicture } from '../components/auth/ProfilePicture';
+
+function ProfileExample() {
+  const { state, updateProfile, uploadProfilePicture } = useProfile();
+
+  const handleUpdateProfile = async () =&gt; {
+    const success = await updateProfile({
+      full_name: 'John Doe',
+      bio: 'Computer Science student',
+      major: 'Computer Science',
+      year_of_study: 'Junior'
+    });
+
+    if (success) {
+      console.log('Profile updated');
+    }
+  };
+
+  return (
+    &lt;div&gt;
+      &lt;ProfilePicture size=&quot;lg&quot; editable={true} /&gt;
+      &lt;button onClick={handleUpdateProfile}&gt;
+        Update Profile
+      &lt;/button&gt;
+    &lt;/div&gt;
+  );
+}
+</code></pre>
+<h2 id="enhanced-security-features">🔐 Enhanced Security Features</h2>
+<h3 id="email-domain-validation">Email Domain Validation</h3>
+<ul>
+<li>Restricted to approved campus domains</li>
+<li>Real-time validation during signup</li>
+<li>Backend verification for security</li>
+</ul>
+<h3 id="password-security">Password Security</h3>
+<ul>
+<li>Minimum 8 characters</li>
+<li>Must contain uppercase, lowercase, number, and special character</li>
+<li>Real-time strength indicator</li>
+<li>Secure password change with current password verification</li>
+</ul>
+<h3 id="profile-picture-security">Profile Picture Security</h3>
+<ul>
+<li>File type validation (JPEG, PNG, WebP only)</li>
+<li>File size limits (5MB max)</li>
+<li>Secure upload with session verification</li>
+</ul>
+<h3 id="form-validation">Form Validation</h3>
+<ul>
+<li>Real-time email validation</li>
+<li>Password strength checking</li>
+<li>Terms acceptance requirement</li>
+<li>Phone number format validation</li>
+<li>Bio character limits</li>
+</ul>
+<h2 id="enhanced-ui-components">🎨 Enhanced UI Components</h2>
+<h3 id="signupform">SignupForm</h3>
+<ul>
+<li>Campus email validation with domain checking</li>
+<li>Real-time password strength indicator</li>
+<li>Password confirmation matching</li>
+<li>Terms and conditions acceptance</li>
+<li>Comprehensive form validation</li>
+</ul>
+<h3 id="profilepicture">ProfilePicture</h3>
+<ul>
+<li>Drag &amp; drop file upload</li>
+<li>Image preview and cropping</li>
+<li>Upload progress indicators</li>
+<li>Delete functionality</li>
+<li>Fallback to user initials</li>
+</ul>
+<h3 id="enhanced-userprofile">Enhanced UserProfile</h3>
+<ul>
+<li>Editable profile sections</li>
+<li>Profile picture management</li>
+<li>Academic information (major, year)</li>
+<li>Contact information</li>
+<li>Bio and personal details</li>
+</ul>
+<h2 id="enhanced-state-management">🔄 Enhanced State Management</h2>
+<h3 id="signup-state">Signup State</h3>
+<pre><code class="language-tsx">interface SignupState {
+  isLoading: boolean;
+  error: string | null;
+  isSignupComplete: boolean;
+  currentStep: 'form' | 'otp' | 'success';
+  email: string;
+}
+</code></pre>
+<h3 id="profile-state">Profile State</h3>
+<pre><code class="language-tsx">interface ProfileState {
+  isLoading: boolean;
+  error: string | null;
+  isUpdating: boolean;
+  isUploadingPicture: boolean;
+}
+</code></pre>
+<h3 id="enhanced-auth-user">Enhanced Auth User</h3>
+<pre><code class="language-tsx">interface AuthUser {
+  user_id: string;
+  email: string;
+  session_token: string;
+  full_name?: string;
+  bio?: string;
+  phone?: string;
+  year_of_study?: string;
+  major?: string;
+  profile_picture_url?: string;
+  created_at?: string;
+}
+</code></pre>
+<h2 id="getting-started">🚀 Getting Started</h2>
+<h3 id="1-complete-app-setup">1. Complete App Setup</h3>
+<pre><code class="language-tsx">import { AuthProvider } from './contexts/AuthContext';
+import { AuthPage } from './pages/AuthPage';
+
+function App() {
+  return (
+    &lt;AuthProvider&gt;
+      &lt;Routes&gt;
+        &lt;Route path=&quot;/profile&quot; element={&lt;ProfilePage /&gt;} /&gt;
+        &lt;Route path=&quot;/auth-demo&quot; element={&lt;AuthDemoPage /&gt;} /&gt;
+        {/* Other routes */}
+      &lt;/Routes&gt;
+    &lt;/AuthProvider&gt;
+  );
+}
+</code></pre>
+<h3 id="2-use-complete-authentication">2. Use Complete Authentication</h3>
+<pre><code class="language-tsx">import { useAuth } from './contexts/AuthContext';
+import { ProfilePicture } from './components/auth/ProfilePicture';
+
+function MyComponent() {
+  const { state, login, logout } = useAuth();
+
+  if (!state.isAuthenticated) {
+    return &lt;AuthPage /&gt;;
+  }
+
+  return (
+    &lt;div&gt;
+      &lt;ProfilePicture size=&quot;md&quot; editable={true} /&gt;
+      &lt;p&gt;Welcome, {state.user?.full_name || state.user?.email}!&lt;/p&gt;
+      &lt;button onClick={logout}&gt;Sign Out&lt;/button&gt;
+    &lt;/div&gt;
+  );
+}
+</code></pre>
+<h2 id="configuration">🔧 Configuration</h2>
+<h3 id="campus-email-domains">Campus Email Domains</h3>
+<p>Update allowed domains in <code>useSignup.ts</code>:</p>
+<pre><code class="language-tsx">const ALLOWED_EMAIL_DOMAINS = [
+  'student.university.edu',
+  'university.edu',
+  'campus.edu',
+  'college.edu',
+  // Add your campus domains
+];
+</code></pre>
+<h3 id="profile-picture-settings">Profile Picture Settings</h3>
+<p>Configure in <code>useProfile.ts</code>:</p>
+<pre><code class="language-tsx">const maxSize = 5 * 1024 * 1024; // 5MB
+const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+</code></pre>
+<h2 id="testing-features">🧪 Testing Features</h2>
+<p>Visit different pages to test:
+- <code>/</code> - Main app with authentication
+- <code>/profile</code> - Complete profile management
+- <code>/auth-demo</code> - API testing and debugging</p>
+<h2 id="mobile-responsiveness">📱 Mobile Responsiveness</h2>
+<p>All components are fully responsive:
+- Touch-friendly profile picture upload
+- Mobile-optimized forms
+- Responsive navigation with profile access
+- Mobile-friendly validation messages</p>
+<h2 id="complete-feature-set">🎉 Complete Feature Set</h2>
+<p>This authentication system now includes:</p>
+<h3 id="user-registration">✅ User Registration</h3>
+<ul>
+<li>Campus email validation</li>
+<li>Password strength requirements</li>
+<li>Terms acceptance</li>
+<li>Real-time form validation</li>
+</ul>
+<h3 id="authentication">✅ Authentication</h3>
+<ul>
+<li>OTP-based login</li>
+<li>Session management</li>
+<li>Password reset flow</li>
+<li>Secure logout</li>
+</ul>
+<h3 id="profile-management_2">✅ Profile Management</h3>
+<ul>
+<li>Complete profile editing</li>
+<li>Profile picture upload/delete</li>
+<li>Academic information</li>
+<li>Contact details</li>
+<li>Bio and personal info</li>
+</ul>
+<h3 id="security">✅ Security</h3>
+<ul>
+<li>Email domain restrictions</li>
+<li>Password complexity requirements</li>
+<li>Session token validation</li>
+<li>File upload security</li>
+<li>Form validation</li>
+</ul>
+<h3 id="user-experience">✅ User Experience</h3>
+<ul>
+<li>Responsive design</li>
+<li>Real-time validation</li>
+<li>Loading states</li>
+<li>Error handling</li>
+<li>Drag &amp; drop uploads</li>
+<li>Mobile optimization</li>
+</ul>
+<p>The system is production-ready and provides a complete user management solution for campus applications!</p>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../uninstall/" class="btn btn-neutral float-left" title="Uninstall"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../usage/" class="btn btn-neutral float-right" title="Usage">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../uninstall/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../usage/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
