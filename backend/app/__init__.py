@@ -29,13 +29,12 @@ def create_app(config_name='development'):
     
     # Register blueprints
     from .routes.events import events_bp
-    app.register_blueprint(events_bp, url_prefix='/api')
+    from .routes.groups import groups_bp  
+    from .routes.posts import posts_bp
     
-    # Additional blueprints will be registered as they are implemented
-    # from .routes.groups import groups_bp  
-    # from .routes.posts import posts_bp
-    # app.register_blueprint(groups_bp, url_prefix='/api')
-    # app.register_blueprint(posts_bp, url_prefix='/api')
+    app.register_blueprint(events_bp, url_prefix='/api')
+    app.register_blueprint(groups_bp, url_prefix='/api')
+    app.register_blueprint(posts_bp, url_prefix='/api')
     
     # Add a simple health check endpoint
     @app.route('/health')

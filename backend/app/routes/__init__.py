@@ -6,6 +6,8 @@ for the application's API endpoints.
 """
 
 from .events import events_bp
+from .groups import groups_bp
+from .posts import posts_bp
 
 # Export blueprints for easy import in app factory
-__all__ = ['events_bp']
+__all__ = ['events_bp', 'groups_bp', 'posts_bp']
