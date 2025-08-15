@@ -12,6 +12,8 @@ import type {
   LoginRequest,
   ResetPasswordRequest,
   ChangePasswordRequest,
+  SignupRequest,
+  UpdateProfileRequest,
   AuthResponse
 } from './types';
 
@@ -246,6 +248,61 @@ export const authApi = {
   getProfile: async (): Promise<AuthResponse> => {
     const token = localStorage.getItem('auth_token');
     return apiRequest<AuthResponse>('/auth/profile', {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+  },
+
+  /**
+   * Sign up new user
+   */
+  signup: async (data: SignupRequest): Promise<AuthResponse> => {
+    return apiRequest<AuthResponse>('/auth/signup', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  /**
+   * Update user profile
+   */
+  updateProfile: async (data: UpdateProfileRequest): Promise<ApiResponse> => {
+    const token = localStorage.getItem('auth_token');
+    return apiRequest<ApiResponse>('/auth/profile', {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    });
+  },
+
+  /**
+   * Upload profile picture
+   */
+  uploadProfilePicture: async (file: File): Promise<ApiResponse> => {
+    const token = localStorage.getItem('auth_token');
+    const formData = new FormData();
+    formData.append('profile_picture', file);
+    
+    return apiRequest<ApiResponse>('/auth/profile/picture', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        // Don't set Content-Type for FormData, let browser set it with boundary
+      },
+      body: formData,
+    });
+  },
+
+  /**
+   * Delete profile picture
+   */
+  deleteProfilePicture: async (): Promise<ApiResponse> => {
+    const token = localStorage.getItem('auth_token');
+    return apiRequest<ApiResponse>('/auth/profile/picture', {
+      method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`,
       },

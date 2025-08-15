@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { LoginForm } from '../components/auth/LoginForm';
 import { ForgotPasswordForm } from '../components/auth/ForgotPasswordForm';
+import { SignupForm } from '../components/auth/SignupForm';
 
-type AuthView = 'login' | 'forgot-password';
+type AuthView = 'login' | 'signup' | 'forgot-password';
 
 interface AuthPageProps {
   onAuthSuccess?: () => void;
@@ -15,6 +16,10 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
     onAuthSuccess?.();
   };
 
+  const handleShowSignup = () => {
+    setCurrentView('signup');
+  };
+
   const handleShowForgotPassword = () => {
     setCurrentView('forgot-password');
   };
@@ -24,21 +29,31 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">CampusConnect</h1>
-          <p className="text-gray-600">Connect with your campus community</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">CampusConnect</h1>
+          <p className="text-gray-600 dark:text-gray-400">Connect with your campus community</p>
         </div>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        {currentView === 'login' ? (
+        {currentView === 'login' && (
           <LoginForm
             onSuccess={handleAuthSuccess}
             onForgotPassword={handleShowForgotPassword}
+            onShowSignup={handleShowSignup}
           />
-        ) : (
+        )}
+
+        {currentView === 'signup' && (
+          <SignupForm
+            onSuccess={handleBackToLogin}
+            onBackToLogin={handleBackToLogin}
+          />
+        )}
+
+        {currentView === 'forgot-password' && (
           <ForgotPasswordForm
             onSuccess={handleBackToLogin}
             onBackToLogin={handleBackToLogin}
@@ -47,7 +62,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
       </div>
 
       <div className="mt-8 text-center">
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-gray-500 dark:text-gray-400">
           Secure authentication powered by email verification
         </p>
       </div>

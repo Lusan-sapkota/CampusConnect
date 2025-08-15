@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { UserProfile } from '../components/auth/UserProfile';
+import { AuthRequiredExample } from '../components/examples/AuthRequiredExample';
 import { api } from '../api';
 
 export const AuthDemoPage: React.FC = () => {
@@ -79,13 +80,13 @@ export const AuthDemoPage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* User Profile Section */}
           <div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">User Profile</h2>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">User Profile</h2>
             <UserProfile />
           </div>
 
           {/* API Testing Section */}
           <div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">API Testing</h2>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">API Testing</h2>
             <div className="bg-white rounded-lg shadow-md p-6">
               <div className="space-y-4 mb-6">
                 <button
@@ -129,11 +130,19 @@ export const AuthDemoPage: React.FC = () => {
           </div>
         </div>
 
+        {/* Auth Required Actions Example */}
+        <div className="mt-8">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Auth Required Actions</h2>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+            <AuthRequiredExample />
+          </div>
+        </div>
+
         {/* Authentication State Debug */}
         <div className="mt-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Authentication State</h2>
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <pre className="text-sm bg-gray-50 p-4 rounded-md overflow-x-auto">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Authentication State</h2>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+            <pre className="text-sm bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 p-4 rounded-md overflow-x-auto">
               {JSON.stringify(
                 {
                   isAuthenticated: state.isAuthenticated,

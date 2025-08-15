@@ -13,6 +13,8 @@ export type {
   LoginRequest,
   ResetPasswordRequest,
   ChangePasswordRequest,
+  SignupRequest,
+  UpdateProfileRequest,
   AuthUser,
   AuthResponse,
   Event,

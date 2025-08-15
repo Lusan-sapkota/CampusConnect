@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Users, Calendar, LogIn, UserPlus, LogOut, Menu, X } from 'lucide-react';
+import { Home, Users, Calendar, LogIn, UserPlus, LogOut, Menu, X, User } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import ThemeToggle from './ThemeToggle';
 
@@ -69,9 +69,20 @@ const Navbar: React.FC = () => {
 
   const AuthButtons = () => (
     <div className="flex items-center space-x-4">
-      <span className="text-sm text-gray-600 dark:text-gray-400">
-        Welcome to CampusConnect
-      </span>
+      <Link
+        to="/auth"
+        className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors duration-200"
+      >
+        <LogIn className="w-4 h-4 mr-1" />
+        Sign in
+      </Link>
+      <Link
+        to="/auth"
+        className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors duration-200"
+      >
+        <UserPlus className="w-4 h-4 mr-1" />
+        Sign up
+      </Link>
     </div>
   );
 
@@ -138,6 +149,11 @@ const Navbar: React.FC = () => {
             <NavItem to="/events" icon={<Calendar className="w-4 h-4" />}>
               Events
             </NavItem>
+            {state.user && (
+              <NavItem to="/profile" icon={<User className="w-4 h-4" />}>
+                Profile
+              </NavItem>
+            )}
             
             <div className="mx-2">
               <ThemeToggle />
@@ -176,6 +192,11 @@ const Navbar: React.FC = () => {
               <NavItem to="/events" icon={<Calendar className="w-5 h-5" />} mobile>
                 Events
               </NavItem>
+              {state.user && (
+                <NavItem to="/profile" icon={<User className="w-5 h-5" />} mobile>
+                  Profile
+                </NavItem>
+              )}
               
               {/* Mobile Authentication Section */}
               {state.user ? (
@@ -205,10 +226,23 @@ const Navbar: React.FC = () => {
                   </button>
                 </div>
               ) : (
-                <div className="border-t border-gray-200 dark:border-gray-700 pt-3 mt-3">
-                  <div className="px-3 py-2 text-sm text-gray-600 dark:text-gray-400">
-                    Welcome to CampusConnect
-                  </div>
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-3 mt-3 space-y-1">
+                  <Link
+                    to="/auth"
+                    onClick={closeMobileMenu}
+                    className="flex items-center px-3 py-2 rounded-lg text-base font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-200"
+                  >
+                    <LogIn className="w-5 h-5 mr-3" />
+                    Sign in
+                  </Link>
+                  <Link
+                    to="/auth"
+                    onClick={closeMobileMenu}
+                    className="flex items-center px-3 py-2 rounded-lg text-base font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors duration-200"
+                  >
+                    <UserPlus className="w-5 h-5 mr-3" />
+                    Sign up
+                  </Link>
                 </div>
               )}
             </div>

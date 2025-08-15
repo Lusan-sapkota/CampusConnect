@@ -59,10 +59,37 @@ export interface ChangePasswordRequest {
   confirm_new_password: string;
 }
 
+export interface SignupRequest {
+  email: string;
+  full_name: string;
+  password: string;
+  confirm_password: string;
+  terms_accepted: boolean;
+}
+
+export interface UpdateProfileRequest {
+  full_name?: string;
+  bio?: string;
+  phone?: string;
+  year_of_study?: string;
+  major?: string;
+}
+
+export interface UploadProfilePictureRequest {
+  profile_picture: File;
+}
+
 export interface AuthUser {
   user_id: string;
   email: string;
   session_token: string;
+  full_name?: string;
+  bio?: string;
+  phone?: string;
+  year_of_study?: string;
+  major?: string;
+  profile_picture_url?: string;
+  created_at?: string;
 }
 
 export interface AuthResponse extends ApiResponse {

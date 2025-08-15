@@ -119,10 +119,10 @@ export const OTPInput: React.FC<OTPInputProps> = ({
             border-2 rounded-lg
             focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
             ${disabled 
-              ? 'bg-gray-100 border-gray-300 text-gray-500 cursor-not-allowed' 
-              : 'bg-white border-gray-300 text-gray-900 hover:border-gray-400'
+              ? 'bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed' 
+              : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white hover:border-gray-400 dark:hover:border-gray-500'
             }
-            ${digit ? 'border-blue-500' : ''}
+            ${digit ? 'border-blue-500 dark:border-blue-400' : ''}
             transition-colors duration-200
           `}
           aria-label={`Digit ${index + 1}`}

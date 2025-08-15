@@ -70,6 +70,30 @@ class ResetPasswordRequest(BaseModel):
         populate_by_name = True
 
 
+class SignupRequest(BaseModel):
+    """Request schema for user signup."""
+    email: EmailStr
+    full_name: str = Field(..., min_length=2, max_length=100)
+    password: str = Field(..., min_length=8, max_length=128)
+    confirm_password: str = Field(..., min_length=8, max_length=128)
+    terms_accepted: bool = Field(..., description="Must accept terms and conditions")
+    
+    class Config:
+        populate_by_name = True
+
+
+class UpdateProfileRequest(BaseModel):
+    """Request schema for updating user profile."""
+    full_name: str = Field(None, min_length=2, max_length=100)
+    bio: str = Field(None, max_length=500)
+    phone: str = Field(None, max_length=20)
+    year_of_study: str = Field(None, max_length=50)
+    major: str = Field(None, max_length=100)
+    
+    class Config:
+        populate_by_name = True
+
+
 @auth_bp.route('/auth/send-otp', methods=['POST'])
 def send_otp():
     """
@@ -363,6 +387,195 @@ def get_profile():
             return create_bad_request_response(result['message'], {
                 'error': result.get('error')
             })
+        
+    except Exception as e:
+        return create_internal_error_response(str(e))
+
+
+@auth_bp.route('/auth/signup', methods=['POST'])
+def signup():
+    """
+    Register a new user account.
+    
+    Returns:
+        JSON response with signup result
+    """
+    try:
+        # Validate request format
+        validation_error = handle_request_validation(request, required_json=True)
+        if validation_error:
+            return validation_error
+        
+        request_data = request.get_json()
+        
+        # Validate request data
+        try:
+            signup_request = SignupRequest(**request_data)
+        except ValidationError as e:
+            return create_validation_error_response(e.errors())
+        
+        # Validate email domain (campus emails only)
+        allowed_domains = [
+            'student.university.edu',
+            'university.edu', 
+            'campus.edu',
+            'college.edu'
+        ]
+        email_domain = signup_request.email.split('@')[1].lower()
+        if email_domain not in allowed_domains:
+            return create_bad_request_response(
+                f"Email must be from an approved campus domain: {', '.join(allowed_domains)}"
+            )
+        
+        # Validate passwords match
+        if signup_request.password != signup_request.confirm_password:
+            return create_bad_request_response("Passwords do not match")
+        
+        # Validate terms acceptance
+        if not signup_request.terms_accepted:
+            return create_bad_request_response("You must accept the terms and conditions")
+        
+        # In a real app, this would:
+        # 1. Check if email already exists
+        # 2. Hash the password
+        # 3. Store user in database
+        # 4. Send welcome email
+        
+        # For now, simulate successful signup
+        user_id = f"user_{signup_request.email.split('@')[0]}"
+        
+        return create_success_response("Account created successfully", {
+            'user_id': user_id,
+            'email': signup_request.email,
+            'full_name': signup_request.full_name
+        })
+        
+    except Exception as e:
+        return create_internal_error_response(str(e))
+
+
+@auth_bp.route('/auth/profile', methods=['PUT'])
+def update_profile():
+    """
+    Update user profile information.
+    
+    Returns:
+        JSON response with update result
+    """
+    try:
+        # Get session token from Authorization header
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return create_bad_request_response("Authorization header with Bearer token is required")
+        
+        session_token = auth_header[7:]  # Remove 'Bearer ' prefix
+        
+        # Verify session
+        session_result = AuthService.verify_session(session_token)
+        if not session_result['valid']:
+            return create_bad_request_response(session_result['message'])
+        
+        # Validate request format
+        validation_error = handle_request_validation(request, required_json=True)
+        if validation_error:
+            return validation_error
+        
+        request_data = request.get_json()
+        
+        # Validate request data
+        try:
+            profile_request = UpdateProfileRequest(**request_data)
+        except ValidationError as e:
+            return create_validation_error_response(e.errors())
+        
+        # In a real app, this would update the user profile in the database
+        # For now, simulate successful update
+        
+        return create_success_response("Profile updated successfully")
+        
+    except Exception as e:
+        return create_internal_error_response(str(e))
+
+
+@auth_bp.route('/auth/profile/picture', methods=['POST'])
+def upload_profile_picture():
+    """
+    Upload user profile picture.
+    
+    Returns:
+        JSON response with upload result
+    """
+    try:
+        # Get session token from Authorization header
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return create_bad_request_response("Authorization header with Bearer token is required")
+        
+        session_token = auth_header[7:]  # Remove 'Bearer ' prefix
+        
+        # Verify session
+        session_result = AuthService.verify_session(session_token)
+        if not session_result['valid']:
+            return create_bad_request_response(session_result['message'])
+        
+        # Check if file is present
+        if 'profile_picture' not in request.files:
+            return create_bad_request_response("No profile picture file provided")
+        
+        file = request.files['profile_picture']
+        if file.filename == '':
+            return create_bad_request_response("No file selected")
+        
+        # Validate file type
+        allowed_extensions = {'png', 'jpg', 'jpeg', 'webp'}
+        if not ('.' in file.filename and 
+                file.filename.rsplit('.', 1)[1].lower() in allowed_extensions):
+            return create_bad_request_response("Invalid file type. Only PNG, JPG, JPEG, and WebP are allowed")
+        
+        # In a real app, this would:
+        # 1. Validate file size
+        # 2. Process/resize the image
+        # 3. Upload to cloud storage (AWS S3, etc.)
+        # 4. Update user profile with new picture URL
+        
+        # For now, simulate successful upload
+        picture_url = f"https://example.com/profiles/{session_result['user_id']}.jpg"
+        
+        return create_success_response("Profile picture uploaded successfully", {
+            'profile_picture_url': picture_url
+        })
+        
+    except Exception as e:
+        return create_internal_error_response(str(e))
+
+
+@auth_bp.route('/auth/profile/picture', methods=['DELETE'])
+def delete_profile_picture():
+    """
+    Delete user profile picture.
+    
+    Returns:
+        JSON response with deletion result
+    """
+    try:
+        # Get session token from Authorization header
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return create_bad_request_response("Authorization header with Bearer token is required")
+        
+        session_token = auth_header[7:]  # Remove 'Bearer ' prefix
+        
+        # Verify session
+        session_result = AuthService.verify_session(session_token)
+        if not session_result['valid']:
+            return create_bad_request_response(session_result['message'])
+        
+        # In a real app, this would:
+        # 1. Delete the image file from storage
+        # 2. Update user profile to remove picture URL
+        
+        # For now, simulate successful deletion
+        return create_success_response("Profile picture deleted successfully")
         
     except Exception as e:
         return create_internal_error_response(str(e))
