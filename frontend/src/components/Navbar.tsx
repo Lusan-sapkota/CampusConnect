@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Home, Users, Calendar, Menu, X, LogIn, UserPlus, LogOut } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import ThemeToggle from './ThemeToggle';
+import Notification from './Notification';
 
 const Navbar: React.FC = () => {
   const location = useLocation();
@@ -39,29 +40,27 @@ const Navbar: React.FC = () => {
               <span className="text-xl font-bold text-gray-900 dark:text-white">CampusConnect</span>
             </Link>
           </div>
-          
+
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
             <Link
               to="/"
               onClick={closeMobileMenu}
-              className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200 ${
-                isActive('/')
+              className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200 ${isActive('/')
                   ? 'border-primary-500 text-gray-900 dark:text-white'
                   : 'border-transparent text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-100 hover:border-gray-300 dark:hover:border-gray-600'
-              }`}
+                }`}
             >
-              <Home className="w-4 h-4 mr-2" />
+              <Home className="w-4 h-4 mr-2 " />
               Home
             </Link>
             <Link
               to="/groups"
               onClick={closeMobileMenu}
-              className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200 ${
-                isActive('/groups')
+              className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200 ${isActive('/groups')
                   ? 'border-primary-500 text-gray-900 dark:text-white'
                   : 'border-transparent text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-100 hover:border-gray-300 dark:hover:border-gray-600'
-              }`}
+                }`}
             >
               <Users className="w-4 h-4 mr-2" />
               Groups
@@ -69,18 +68,17 @@ const Navbar: React.FC = () => {
             <Link
               to="/events"
               onClick={closeMobileMenu}
-              className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200 ${
-                isActive('/events')
+              className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200 ${isActive('/events')
                   ? 'border-primary-500 text-gray-900 dark:text-white'
                   : 'border-transparent text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-100 hover:border-gray-300 dark:hover:border-gray-600'
-              }`}
+                }`}
             >
               <Calendar className="w-4 h-4 mr-2" />
               Events
             </Link>
-            
-            <ThemeToggle />
-            
+
+            {/* <ThemeToggle /> */}
+
             {/* Authentication Section */}
             {user ? (
               <div className="relative">
@@ -95,7 +93,7 @@ const Navbar: React.FC = () => {
                   />
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{user.name}</span>
                 </button>
-                
+
                 {showUserMenu && (
                   <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50">
                     <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
@@ -132,9 +130,16 @@ const Navbar: React.FC = () => {
             )}
           </div>
 
+          <div className="hidden md:flex justify-start space-x-2">
+            <Notification />
+            <ThemeToggle />
+          </div>
+
+
           {/* Mobile menu button */}
           <div className="md:hidden flex items-center space-x-2">
             <ThemeToggle />
+            <Notification/>
             <button
               onClick={toggleMobileMenu}
               className="p-2 rounded-lg text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200"
@@ -155,11 +160,10 @@ const Navbar: React.FC = () => {
               <Link
                 to="/"
                 onClick={closeMobileMenu}
-                className={`flex items-center px-3 py-2 rounded-lg text-base font-medium transition-colors duration-200 ${
-                  isActive('/')
+                className={`flex items-center px-3 py-2 rounded-lg text-base font-medium transition-colors duration-200 ${isActive('/')
                     ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400'
                     : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800'
-                }`}
+                  }`}
               >
                 <Home className="w-5 h-5 mr-3" />
                 Home
@@ -167,11 +171,10 @@ const Navbar: React.FC = () => {
               <Link
                 to="/groups"
                 onClick={closeMobileMenu}
-                className={`flex items-center px-3 py-2 rounded-lg text-base font-medium transition-colors duration-200 ${
-                  isActive('/groups')
+                className={`flex items-center px-3 py-2 rounded-lg text-base font-medium transition-colors duration-200 ${isActive('/groups')
                     ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400'
                     : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800'
-                }`}
+                  }`}
               >
                 <Users className="w-5 h-5 mr-3" />
                 Groups
@@ -179,16 +182,15 @@ const Navbar: React.FC = () => {
               <Link
                 to="/events"
                 onClick={closeMobileMenu}
-                className={`flex items-center px-3 py-2 rounded-lg text-base font-medium transition-colors duration-200 ${
-                  isActive('/events')
+                className={`flex items-center px-3 py-2 rounded-lg text-base font-medium transition-colors duration-200 ${isActive('/events')
                     ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400'
                     : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800'
-                }`}
+                  }`}
               >
                 <Calendar className="w-5 h-5 mr-3" />
                 Events
               </Link>
-              
+
               {/* Mobile Authentication Section */}
               {user ? (
                 <div className="border-t border-gray-200 dark:border-gray-700 pt-3 mt-3">

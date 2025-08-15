@@ -80,9 +80,10 @@ const HomePage: React.FC = () => {
               </button>
             </div>
             
-            <div className="space-y-4">
-              {upcomingEvents.map((event) => (
-                <EventCard key={event.id} event={event} compact />
+            <div className="flex flex-col gap-4">
+              {upcomingEvents.map((event, index) => (
+                <EventCard key={event.id} event={event} compact
+                dateColor={index % 2 === 0 ? 'bg-orange-500' : 'bg-green-500'} />
               ))}
             </div>
 
