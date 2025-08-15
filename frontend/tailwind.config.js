@@ -5,6 +5,20 @@ export default {
   theme: {
     extend: {
       colors: {
+        background: {
+          light: '#FFFFFF',
+          dark: '#121212',
+        },
+        text: {
+          light: '#121212',
+          dark: '#E0E0E0',
+        },
+        accent: {
+          green: '#00FF85',
+          blue: '#1E90FF',
+          pink: '#FF0099',
+          yellow: '#FFEB3B',
+        },
         primary: {
           50: '#eff6ff',
           100: '#dbeafe',
@@ -31,7 +45,10 @@ export default {
         },
       },
       screens: {
-        'xs': '475px',
+        xs: '475px',
+      },
+      fontFamily: {
+        sans: ['"Euclid Circular A"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
       },
     },
   },

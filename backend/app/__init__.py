@@ -36,9 +36,72 @@ def create_app(config_name='development'):
     app.register_blueprint(groups_bp, url_prefix='/api')
     app.register_blueprint(posts_bp, url_prefix='/api')
     
+    # Register centralized error handlers
+    register_error_handlers(app)
+    
     # Add a simple health check endpoint
     @app.route('/health')
     def health_check():
         return {'status': 'healthy', 'message': 'Flask backend API is running'}
     
     return app
+
+
+def register_error_handlers(app):
+    """
+    Register centralized error handlers for the Flask application.
+    
+    Args:
+        app (Flask): Flask application instance
+    """
+    from .utils.helpers import (
+        create_error_response,
+        create_method_not_allowed_response,
+        create_internal_error_response
+    )
+    
+    @app.errorhandler(404)
+    def not_found(error):
+        """Handle 404 Not Found errors."""
+        return create_error_response(
+            message="The requested resource was not found",
+            error_code="NOT_FOUND",
+            status_code=404
+        )
+    
+    @app.errorhandler(400)
+    def bad_request(error):
+        """Handle 400 Bad Request errors."""
+        return create_error_response(
+            message="Bad request - invalid or malformed request data",
+            error_code="BAD_REQUEST",
+            status_code=400
+        )
+    
+    @app.errorhandler(405)
+    def method_not_allowed(error):
+        """Handle 405 Method Not Allowed errors."""
+        return create_method_not_allowed_response()
+    
+    @app.errorhandler(500)
+    def internal_server_error(error):
+        """Handle 500 Internal Server Error."""
+        return create_internal_error_response()
+    
+    @app.errorhandler(422)
+    def unprocessable_entity(error):
+        """Handle 422 Unprocessable Entity errors (validation errors)."""
+        return create_error_response(
+            message="Unprocessable entity - request data failed validation",
+            error_code="VALIDATION_ERROR",
+            status_code=422
+        )
+    
+    @app.errorhandler(415)
+    def unsupported_media_type(error):
+        """Handle 415 Unsupported Media Type errors."""
+        return create_error_response(
+            message="Unsupported media type - request must be JSON",
+            error_code="UNSUPPORTED_MEDIA_TYPE",
+            status_code=415
+        )

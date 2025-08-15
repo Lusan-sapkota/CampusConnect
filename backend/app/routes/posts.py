@@ -5,10 +5,20 @@ This module defines the Flask blueprint for post-related endpoints,
 including retrieving posts, creating posts, and liking posts.
 """
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, request
 from pydantic import ValidationError
 from app.services.post_service import PostService
-from app.models.data_models import LikePostRequest, CreatePostRequest, ApiResponse, ApiErrorResponse
+from app.models.data_models import LikePostRequest, CreatePostRequest
+from app.utils.helpers import (
+    create_success_response,
+    create_validation_error_response,
+    create_not_found_response,
+    create_internal_error_response,
+    create_bad_request_response,
+    handle_request_validation,
+    format_list_response,
+    format_single_item_response
+)
 
 # Create posts blueprint
 posts_bp = Blueprint('posts', __name__)
@@ -29,33 +39,18 @@ def get_posts():
         
         if category:
             posts = PostService.get_posts_by_category(category)
+            message = f"Posts for category '{category}' retrieved successfully"
         elif author:
             posts = PostService.get_posts_by_author(author)
+            message = f"Posts by author '{author}' retrieved successfully"
         else:
             posts = PostService.get_all_posts()
+            message = "Posts retrieved successfully"
         
-        # Convert to dict for JSON serialization
-        posts_data = [post.dict() for post in posts]
-        
-        filter_msg = ""
-        if category:
-            filter_msg = f" for category: {category}"
-        elif author:
-            filter_msg = f" by author: {author}"
-        
-        return jsonify({
-            'success': True,
-            'message': f'Posts retrieved successfully{filter_msg}',
-            'data': posts_data
-        }), 200
+        return format_list_response(posts, message=message, resource_name="posts")
         
     except Exception as e:
-        error_response = ApiErrorResponse(
-            message="Failed to retrieve posts",
-            error="INTERNAL_ERROR",
-            details={"error": str(e)}
-        )
-        return jsonify(error_response.dict()), 500
+        return create_internal_error_response(str(e))
 
 
 @posts_bp.route('/posts', methods=['POST'])
@@ -67,13 +62,10 @@ def create_post():
         JSON response with created post data or error message
     """
     try:
-        # Get JSON data from request
-        if not request.is_json:
-            error_response = ApiErrorResponse(
-                message="Request must be JSON",
-                error="BAD_REQUEST"
-            )
-            return jsonify(error_response.dict()), 400
+        # Validate request format
+        validation_error = handle_request_validation(request, required_json=True)
+        if validation_error:
+            return validation_error
         
         request_data = request.get_json()
         
@@ -81,28 +73,18 @@ def create_post():
         try:
             create_request = CreatePostRequest(**request_data)
         except ValidationError as e:
-            error_response = ApiErrorResponse(
-                message="Invalid request data",
-                error="VALIDATION_ERROR",
-                details={"validation_errors": e.errors()}
-            )
-            return jsonify(error_response.dict()), 400
+            return create_validation_error_response(e.errors())
         
         # Process create request
         result = PostService.create_post(create_request)
         
         if result.success:
-            return jsonify(result.dict()), 201
+            return create_success_response(result.message, result.data, 201)
         else:
-            return jsonify(result.dict()), 400
+            return create_bad_request_response(result.message, result.details)
             
     except Exception as e:
-        error_response = ApiErrorResponse(
-            message="Failed to create post",
-            error="INTERNAL_ERROR",
-            details={"error": str(e)}
-        )
-        return jsonify(error_response.dict()), 500
+        return create_internal_error_response(str(e))
 
 
 @posts_bp.route('/posts/<post_id>', methods=['GET'])
@@ -120,25 +102,12 @@ def get_post(post_id):
         post = PostService.get_post_by_id(post_id)
         
         if not post:
-            error_response = ApiErrorResponse(
-                message=f"Post with ID {post_id} not found",
-                error="NOT_FOUND"
-            )
-            return jsonify(error_response.dict()), 404
+            return create_not_found_response("Post", post_id)
         
-        return jsonify({
-            'success': True,
-            'message': 'Post retrieved successfully',
-            'data': post.dict()
-        }), 200
+        return format_single_item_response(post, resource_name="post")
         
     except Exception as e:
-        error_response = ApiErrorResponse(
-            message="Failed to retrieve post",
-            error="INTERNAL_ERROR",
-            details={"error": str(e)}
-        )
-        return jsonify(error_response.dict()), 500
+        return create_internal_error_response(str(e))
 
 
 @posts_bp.route('/posts/<post_id>/like', methods=['POST'])
@@ -153,13 +122,10 @@ def like_post(post_id):
         JSON response with success message or error
     """
     try:
-        # Get JSON data from request
-        if not request.is_json:
-            error_response = ApiErrorResponse(
-                message="Request must be JSON",
-                error="BAD_REQUEST"
-            )
-            return jsonify(error_response.dict()), 400
+        # Validate request format
+        validation_error = handle_request_validation(request, required_json=True)
+        if validation_error:
+            return validation_error
         
         request_data = request.get_json()
         
@@ -167,45 +133,27 @@ def like_post(post_id):
         try:
             like_request = LikePostRequest(**request_data)
         except ValidationError as e:
-            error_response = ApiErrorResponse(
-                message="Invalid request data",
-                error="VALIDATION_ERROR",
-                details={"validation_errors": e.errors()}
-            )
-            return jsonify(error_response.dict()), 400
+            return create_validation_error_response(e.errors())
         
         # Process like request
         result = PostService.like_post(post_id, like_request)
         
         if result.success:
-            return jsonify(result.dict()), 200
+            return create_success_response(result.message, result.data, 200)
         else:
-            return jsonify(result.dict()), 400
+            return create_bad_request_response(result.message, result.details)
             
     except Exception as e:
-        error_response = ApiErrorResponse(
-            message="Failed to like post",
-            error="INTERNAL_ERROR",
-            details={"error": str(e)}
-        )
-        return jsonify(error_response.dict()), 500
+        return create_internal_error_response(str(e))
 
 
 @posts_bp.errorhandler(404)
 def post_not_found(error):
     """Handle 404 errors for post routes."""
-    error_response = ApiErrorResponse(
-        message="Post endpoint not found",
-        error="NOT_FOUND"
-    )
-    return jsonify(error_response.dict()), 404
+    return create_not_found_response("Posts endpoint")
 
 
 @posts_bp.errorhandler(405)
 def method_not_allowed(error):
     """Handle 405 errors for post routes."""
-    error_response = ApiErrorResponse(
-        message="Method not allowed for this post endpoint",
-        error="METHOD_NOT_ALLOWED"
-    )
-    return jsonify(error_response.dict()), 405
+    return create_bad_request_response("Method not allowed for this posts endpoint")

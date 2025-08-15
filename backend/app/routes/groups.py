@@ -5,10 +5,20 @@ This module defines the Flask blueprint for group-related endpoints,
 including retrieving groups and joining groups.
 """
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, request
 from pydantic import ValidationError
 from app.services.group_service import GroupService
-from app.models.data_models import JoinGroupRequest, ApiResponse, ApiErrorResponse
+from app.models.data_models import JoinGroupRequest
+from app.utils.helpers import (
+    create_success_response,
+    create_validation_error_response,
+    create_not_found_response,
+    create_internal_error_response,
+    create_bad_request_response,
+    handle_request_validation,
+    format_list_response,
+    format_single_item_response
+)
 
 # Create groups blueprint
 groups_bp = Blueprint('groups', __name__)
@@ -28,25 +38,15 @@ def get_groups():
         
         if category:
             groups = GroupService.get_groups_by_category(category)
+            message = f"Groups for category '{category}' retrieved successfully"
         else:
             groups = GroupService.get_all_groups()
+            message = "Groups retrieved successfully"
         
-        # Convert to dict for JSON serialization
-        groups_data = [group.dict() for group in groups]
-        
-        return jsonify({
-            'success': True,
-            'message': f'Groups retrieved successfully{f" for category: {category}" if category else ""}',
-            'data': groups_data
-        }), 200
+        return format_list_response(groups, message=message, resource_name="groups")
         
     except Exception as e:
-        error_response = ApiErrorResponse(
-            message="Failed to retrieve groups",
-            error="INTERNAL_ERROR",
-            details={"error": str(e)}
-        )
-        return jsonify(error_response.dict()), 500
+        return create_internal_error_response(str(e))
 
 
 @groups_bp.route('/groups/<group_id>', methods=['GET'])
@@ -64,25 +64,12 @@ def get_group(group_id):
         group = GroupService.get_group_by_id(group_id)
         
         if not group:
-            error_response = ApiErrorResponse(
-                message=f"Group with ID {group_id} not found",
-                error="NOT_FOUND"
-            )
-            return jsonify(error_response.dict()), 404
+            return create_not_found_response("Group", group_id)
         
-        return jsonify({
-            'success': True,
-            'message': 'Group retrieved successfully',
-            'data': group.dict()
-        }), 200
+        return format_single_item_response(group, resource_name="group")
         
     except Exception as e:
-        error_response = ApiErrorResponse(
-            message="Failed to retrieve group",
-            error="INTERNAL_ERROR",
-            details={"error": str(e)}
-        )
-        return jsonify(error_response.dict()), 500
+        return create_internal_error_response(str(e))
 
 
 @groups_bp.route('/groups/<group_id>/join', methods=['POST'])
@@ -97,13 +84,10 @@ def join_group(group_id):
         JSON response with success message or error
     """
     try:
-        # Get JSON data from request
-        if not request.is_json:
-            error_response = ApiErrorResponse(
-                message="Request must be JSON",
-                error="BAD_REQUEST"
-            )
-            return jsonify(error_response.dict()), 400
+        # Validate request format
+        validation_error = handle_request_validation(request, required_json=True)
+        if validation_error:
+            return validation_error
         
         request_data = request.get_json()
         
@@ -111,45 +95,27 @@ def join_group(group_id):
         try:
             join_request = JoinGroupRequest(**request_data)
         except ValidationError as e:
-            error_response = ApiErrorResponse(
-                message="Invalid request data",
-                error="VALIDATION_ERROR",
-                details={"validation_errors": e.errors()}
-            )
-            return jsonify(error_response.dict()), 400
+            return create_validation_error_response(e.errors())
         
         # Process join request
         result = GroupService.join_group(group_id, join_request)
         
         if result.success:
-            return jsonify(result.dict()), 200
+            return create_success_response(result.message, result.data, 200)
         else:
-            return jsonify(result.dict()), 400
+            return create_bad_request_response(result.message, result.details)
             
     except Exception as e:
-        error_response = ApiErrorResponse(
-            message="Failed to join group",
-            error="INTERNAL_ERROR",
-            details={"error": str(e)}
-        )
-        return jsonify(error_response.dict()), 500
+        return create_internal_error_response(str(e))
 
 
 @groups_bp.errorhandler(404)
 def group_not_found(error):
     """Handle 404 errors for group routes."""
-    error_response = ApiErrorResponse(
-        message="Group endpoint not found",
-        error="NOT_FOUND"
-    )
-    return jsonify(error_response.dict()), 404
+    return create_not_found_response("Groups endpoint")
 
 
 @groups_bp.errorhandler(405)
 def method_not_allowed(error):
     """Handle 405 errors for group routes."""
-    error_response = ApiErrorResponse(
-        message="Method not allowed for this group endpoint",
-        error="METHOD_NOT_ALLOWED"
-    )
-    return jsonify(error_response.dict()), 405
+    return create_bad_request_response("Method not allowed for this groups endpoint")
