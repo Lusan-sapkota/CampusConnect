@@ -1,0 +1,1 @@
+# Blueprint registration will be implemented here
