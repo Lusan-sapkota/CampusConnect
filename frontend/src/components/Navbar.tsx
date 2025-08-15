@@ -105,7 +105,7 @@ const Navbar: React.FC = () => {
               <Users className="w-4 h-4 mr-2" />
               Groups
             </Link>
-            <Link
+            <NavItem
               to="/events"
               onClick={closeMobileMenu}
               className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200 ${isActive('/events')
