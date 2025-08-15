@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import ThemeToggle from './ThemeToggle';
 import ProfileDropdown from './ProfileDropdown';
 import Avatar from './Avatar';
+import Notification from './Notification';
 
 const Navbar: React.FC = () => {
   const location = useLocation();
@@ -79,15 +80,40 @@ const Navbar: React.FC = () => {
             </Link>
           </div>
 
+
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-4">
-            <NavItem to="/" icon={<Home className="w-4 h-4" />}>
+          <div className="hidden md:flex items-center space-x-8">
+            <Link
+              to="/"
+              onClick={closeMobileMenu}
+              className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200 ${isActive('/')
+                  ? 'border-primary-500 text-gray-900 dark:text-white'
+                  : 'border-transparent text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-100 hover:border-gray-300 dark:hover:border-gray-600'
+                }`}
+            >
+              <Home className="w-4 h-4 mr-2 " />
               Home
-            </NavItem>
-            <NavItem to="/groups" icon={<Users className="w-4 h-4" />}>
+            </Link>
+            <Link
+              to="/groups"
+              onClick={closeMobileMenu}
+              className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200 ${isActive('/groups')
+                  ? 'border-primary-500 text-gray-900 dark:text-white'
+                  : 'border-transparent text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-100 hover:border-gray-300 dark:hover:border-gray-600'
+                }`}
+            >
+              <Users className="w-4 h-4 mr-2" />
               Groups
-            </NavItem>
-            <NavItem to="/events" icon={<Calendar className="w-4 h-4" />}>
+            </Link>
+            <Link
+              to="/events"
+              onClick={closeMobileMenu}
+              className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200 ${isActive('/events')
+                  ? 'border-primary-500 text-gray-900 dark:text-white'
+                  : 'border-transparent text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-100 hover:border-gray-300 dark:hover:border-gray-600'
+                }`}
+            >
+              <Calendar className="w-4 h-4 mr-2" />
               Events
             </NavItem>
             {state.user && (
@@ -104,9 +130,16 @@ const Navbar: React.FC = () => {
             {state.user ? <UserMenu /> : <AuthButtons />}
           </div>
 
+          <div className="hidden md:flex justify-start space-x-2">
+            <Notification />
+            <ThemeToggle />
+          </div>
+
+
           {/* Mobile menu button */}
           <div className="md:hidden flex items-center space-x-2">
             <ThemeToggle />
+            <Notification/>
             <button
               onClick={toggleMobileMenu}
               className="p-1.5 rounded-lg text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200"
@@ -124,13 +157,37 @@ const Navbar: React.FC = () => {
         {isMobileMenuOpen && (
           <div className="md:hidden border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
             <div className="px-2 pt-2 pb-3 space-y-1">
-              <NavItem to="/" icon={<Home className="w-5 h-5" />} mobile>
+              <Link
+                to="/"
+                onClick={closeMobileMenu}
+                className={`flex items-center px-3 py-2 rounded-lg text-base font-medium transition-colors duration-200 ${isActive('/')
+                    ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400'
+                    : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800'
+                  }`}
+              >
+                <Home className="w-5 h-5 mr-3" />
                 Home
-              </NavItem>
-              <NavItem to="/groups" icon={<Users className="w-5 h-5" />} mobile>
+              </Link>
+              <Link
+                to="/groups"
+                onClick={closeMobileMenu}
+                className={`flex items-center px-3 py-2 rounded-lg text-base font-medium transition-colors duration-200 ${isActive('/groups')
+                    ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400'
+                    : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800'
+                  }`}
+              >
+                <Users className="w-5 h-5 mr-3" />
                 Groups
-              </NavItem>
-              <NavItem to="/events" icon={<Calendar className="w-5 h-5" />} mobile>
+              </Link>
+              <Link
+                to="/events"
+                onClick={closeMobileMenu}
+                className={`flex items-center px-3 py-2 rounded-lg text-base font-medium transition-colors duration-200 ${isActive('/events')
+                    ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400'
+                    : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800'
+                  }`}
+              >
+                <Calendar className="w-5 h-5 mr-3" />
                 Events
               </NavItem>
               {state.user && (

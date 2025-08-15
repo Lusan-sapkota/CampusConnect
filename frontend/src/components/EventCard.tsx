@@ -6,9 +6,10 @@ import { Event } from '../data/events';
 interface EventCardProps {
   event: Event;
   compact?: boolean;
+  dateColor?: string; 
 }
 
-const EventCard: React.FC<EventCardProps> = ({ event, compact = false }) => {
+const EventCard: React.FC<EventCardProps> = ({ event, compact = false, dateColor}) => {
   const getCategoryColor = (category: string) => {
     switch (category) {
       case 'academic':
@@ -37,30 +38,50 @@ const EventCard: React.FC<EventCardProps> = ({ event, compact = false }) => {
 
   if (compact) {
     return (
-      <Link to={`/event/${event.id}`} className="block">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-shadow duration-200">
-          <div className="flex items-center space-x-3 mb-2">
-            <div className={`w-3 h-3 rounded-full ${getCategoryColor(event.category)}`}></div>
-            <span className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">
-              {event.category}
-            </span>
+  <Link to={`/event/${event.id}`} className="block">
+    <div className="flex bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md transition-shadow duration-200">
+      
+      {/* Date Box */}
+<div className={`flex flex-col items-center justify-center ${dateColor} text-white px-4 py-6 w-24`}>
+        <span className="text-3xl font-bold">{new Date(event.date).getDate()}</span>
+        <span className="text-sm uppercase">
+          {new Date(event.date).toLocaleString('en-US', { month: 'short' })}
+        </span>
+      </div>
+
+      {/* Event Details */}
+      <div className="flex-1 p-4 sm:p-6">
+        <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2">
+          {event.title}
+        </h3>
+
+        <p className="text-gray-600 dark:text-gray-300 text-sm mb-4 line-clamp-2">
+          {event.description}
+        </p>
+
+        <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+          <div className="flex items-center space-x-2">
+            <Calendar className="w-4 h-4" />
+            <span>{formatDate(event.date)}</span>
           </div>
-          <h3 className="font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2">
-            {event.title}
-          </h3>
-          <div className="space-y-1 text-sm text-gray-600 dark:text-gray-300">
-            <div className="flex items-center space-x-2">
-              <Calendar className="w-4 h-4" />
-              <span>{formatDate(event.date)}</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Users className="w-4 h-4" />
-              <span>{event.attendees} attending</span>
-            </div>
+          <div className="flex items-center space-x-2">
+            <Clock className="w-4 h-4" />
+            <span>{event.time}</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <MapPin className="w-4 h-4" />
+            <span>{event.location}</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Users className="w-4 h-4" />
+            <span>{event.attendees} / {event.maxAttendees} attending</span>
           </div>
         </div>
-      </Link>
-    );
+      </div>
+    </div>
+  </Link>
+);
+
   }
 
   return (
