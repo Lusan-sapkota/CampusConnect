@@ -1,107 +1,185 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
+import { authApi, AuthUser, ApiError } from '../api';
 
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  avatar?: string;
-}
-
-interface AuthContextType {
-  user: User | null;
-  login: (email: string, password: string) => Promise<boolean>;
-  signup: (name: string, email: string, password: string) => Promise<boolean>;
-  logout: () => void;
+// Auth State Types
+interface AuthState {
+  user: AuthUser | null;
+  isAuthenticated: boolean;
   isLoading: boolean;
+  error: string | null;
 }
 
+// Auth Actions
+type AuthAction =
+  | { type: 'AUTH_START' }
+  | { type: 'AUTH_SUCCESS'; payload: AuthUser }
+  | { type: 'AUTH_ERROR'; payload: string }
+  | { type: 'AUTH_LOGOUT' }
+  | { type: 'CLEAR_ERROR' };
+
+// Auth Context Type
+interface AuthContextType {
+  state: AuthState;
+  login: (email: string, otp: string) => Promise<boolean>;
+  logout: () => Promise<void>;
+  clearError: () => void;
+  checkAuthStatus: () => Promise<void>;
+}
+
+// Initial State
+const initialState: AuthState = {
+  user: null,
+  isAuthenticated: false,
+  isLoading: false,
+  error: null,
+};
+
+// Auth Reducer
+const authReducer = (state: AuthState, action: AuthAction): AuthState => {
+  switch (action.type) {
+    case 'AUTH_START':
+      return {
+        ...state,
+        isLoading: true,
+        error: null,
+      };
+    case 'AUTH_SUCCESS':
+      return {
+        ...state,
+        user: action.payload,
+        isAuthenticated: true,
+        isLoading: false,
+        error: null,
+      };
+    case 'AUTH_ERROR':
+      return {
+        ...state,
+        user: null,
+        isAuthenticated: false,
+        isLoading: false,
+        error: action.payload,
+      };
+    case 'AUTH_LOGOUT':
+      return {
+        ...state,
+        user: null,
+        isAuthenticated: false,
+        isLoading: false,
+        error: null,
+      };
+    case 'CLEAR_ERROR':
+      return {
+        ...state,
+        error: null,
+      };
+    default:
+      return state;
+  }
+};
+
+// Create Context
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const useAuth = () => {
+// Auth Provider Props
+interface AuthProviderProps {
+  children: ReactNode;
+}
+
+// Auth Provider Component
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+  const [state, dispatch] = useReducer(authReducer, initialState);
+
+  // Check authentication status on mount
+  useEffect(() => {
+    checkAuthStatus();
+  }, []);
+
+  const checkAuthStatus = async () => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      return;
+    }
+
+    dispatch({ type: 'AUTH_START' });
+    
+    try {
+      const response = await authApi.getProfile();
+      if (response.success && response.data) {
+        dispatch({ type: 'AUTH_SUCCESS', payload: response.data });
+      } else {
+        localStorage.removeItem('auth_token');
+        dispatch({ type: 'AUTH_ERROR', payload: 'Session expired' });
+      }
+    } catch (error) {
+      localStorage.removeItem('auth_token');
+      if (error instanceof ApiError) {
+        dispatch({ type: 'AUTH_ERROR', payload: error.message });
+      } else {
+        dispatch({ type: 'AUTH_ERROR', payload: 'Authentication check failed' });
+      }
+    }
+  };
+
+  const login = async (email: string, otp: string): Promise<boolean> => {
+    dispatch({ type: 'AUTH_START' });
+    
+    try {
+      const response = await authApi.login({ email, otp });
+      
+      if (response.success && response.data) {
+        // Store token in localStorage
+        localStorage.setItem('auth_token', response.data.session_token);
+        dispatch({ type: 'AUTH_SUCCESS', payload: response.data });
+        return true;
+      } else {
+        dispatch({ type: 'AUTH_ERROR', payload: response.message || 'Login failed' });
+        return false;
+      }
+    } catch (error) {
+      if (error instanceof ApiError) {
+        dispatch({ type: 'AUTH_ERROR', payload: error.message });
+      } else {
+        dispatch({ type: 'AUTH_ERROR', payload: 'Login failed' });
+      }
+      return false;
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await authApi.logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      localStorage.removeItem('auth_token');
+      dispatch({ type: 'AUTH_LOGOUT' });
+    }
+  };
+
+  const clearError = () => {
+    dispatch({ type: 'CLEAR_ERROR' });
+  };
+
+  const value: AuthContextType = {
+    state,
+    login,
+    logout,
+    clearError,
+    checkAuthStatus,
+  };
+
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+// Custom hook to use auth context
+export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-};
-
-interface AuthProviderProps {
-  children: React.ReactNode;
-}
-
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    // Check for stored user data on app load
-    const storedUser = localStorage.getItem('campusconnect_user');
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (error) {
-        localStorage.removeItem('campusconnect_user');
-      }
-    }
-    setIsLoading(false);
-  }, []);
-
-  const login = async (email: string, password: string): Promise<boolean> => {
-    setIsLoading(true);
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock successful login
-      const mockUser: User = {
-        id: '1',
-        name: 'John Doe',
-        email: email,
-        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent('John Doe')}&background=6366f1&color=fff`
-      };
-      
-      setUser(mockUser);
-      localStorage.setItem('campusconnect_user', JSON.stringify(mockUser));
-      return true;
-    } catch (error) {
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const signup = async (name: string, email: string, password: string): Promise<boolean> => {
-    setIsLoading(true);
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock successful signup
-      const mockUser: User = {
-        id: '1',
-        name: name,
-        email: email,
-        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=6366f1&color=fff`
-      };
-      
-      setUser(mockUser);
-      localStorage.setItem('campusconnect_user', JSON.stringify(mockUser));
-      return true;
-    } catch (error) {
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('campusconnect_user');
-  };
-
-  return (
-    <AuthContext.Provider value={{ user, login, signup, logout, isLoading }}>
-      {children}
-    </AuthContext.Provider>
-  );
 };

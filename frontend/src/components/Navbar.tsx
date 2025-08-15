@@ -7,7 +7,7 @@ import ThemeToggle from './ThemeToggle';
 const Navbar: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { state, logout } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -22,10 +22,9 @@ const Navbar: React.FC = () => {
     setIsMobileMenuOpen(false);
   };
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     setShowUserMenu(false);
-    navigate('/');
   };
 
   // Close user menu when clicking outside
@@ -70,54 +69,50 @@ const Navbar: React.FC = () => {
 
   const AuthButtons = () => (
     <div className="flex items-center space-x-4">
-      <Link
-        to="/login"
-        className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors duration-200"
-      >
-        <LogIn className="w-4 h-4 mr-1" />
-        Sign in
-      </Link>
-      <Link
-        to="/signup"
-        className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors duration-200"
-      >
-        <UserPlus className="w-4 h-4 mr-1" />
-        Sign up
-      </Link>
+      <span className="text-sm text-gray-600 dark:text-gray-400">
+        Welcome to CampusConnect
+      </span>
     </div>
   );
 
-  const UserMenu = () => (
-    <div className="relative" ref={userMenuRef}>
-      <button
-        onClick={() => setShowUserMenu(!showUserMenu)}
-        className="flex items-center space-x-2 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200"
-      >
-        <img
-          src={user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=6366f1&color=fff`}
-          alt={user.name}
-          className="w-7 h-7 rounded-full"
-        />
-        <span className="text-sm font-medium text-gray-700 dark:text-gray-300 hidden md:block">{user.name}</span>
-      </button>
-      
-      {showUserMenu && (
-        <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50">
-          <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
-            <p className="text-sm font-medium text-gray-900 dark:text-white">{user.name}</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">{user.email}</p>
+  const UserMenu = () => {
+    const user = state.user;
+    if (!user) return null;
+    
+    const userName = user.email.split('@')[0].replace('.', ' ').replace(/\b\w/g, l => l.toUpperCase());
+    
+    return (
+      <div className="relative" ref={userMenuRef}>
+        <button
+          onClick={() => setShowUserMenu(!showUserMenu)}
+          className="flex items-center space-x-2 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200"
+        >
+          <img
+            src={`https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=6366f1&color=fff`}
+            alt={userName}
+            className="w-7 h-7 rounded-full"
+          />
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300 hidden md:block">{userName}</span>
+        </button>
+        
+        {showUserMenu && (
+          <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50">
+            <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
+              <p className="text-sm font-medium text-gray-900 dark:text-white">{userName}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{user.email}</p>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Sign out
+            </button>
           </div>
-          <button
-            onClick={handleLogout}
-            className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-          >
-            <LogOut className="w-4 h-4 mr-2" />
-            Sign out
-          </button>
-        </div>
-      )}
-    </div>
-  );
+        )}
+      </div>
+    );
+  };
 
   return (
     <nav className="bg-white dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
@@ -149,7 +144,7 @@ const Navbar: React.FC = () => {
             </div>
             
             {/* Authentication Section */}
-            {user ? <UserMenu /> : <AuthButtons />}
+            {state.user ? <UserMenu /> : <AuthButtons />}
           </div>
 
           {/* Mobile menu button */}
@@ -183,17 +178,19 @@ const Navbar: React.FC = () => {
               </NavItem>
               
               {/* Mobile Authentication Section */}
-              {user ? (
+              {state.user ? (
                 <div className="border-t border-gray-200 dark:border-gray-700 pt-3 mt-3">
                   <div className="flex items-center px-3 py-2 mb-2">
                     <img
-                      src={user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=6366f1&color=fff`}
-                      alt={user.name}
+                      src={`https://ui-avatars.com/api/?name=${encodeURIComponent(state.user.email.split('@')[0])}&background=6366f1&color=fff`}
+                      alt={state.user.email}
                       className="w-7 h-7 rounded-full mr-3"
                     />
                     <div>
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">{user.name}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">{user.email}</p>
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">
+                        {state.user.email.split('@')[0].replace('.', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{state.user.email}</p>
                     </div>
                   </div>
                   <button
@@ -208,23 +205,10 @@ const Navbar: React.FC = () => {
                   </button>
                 </div>
               ) : (
-                <div className="border-t border-gray-200 dark:border-gray-700 pt-3 mt-3 space-y-1">
-                  <Link
-                    to="/login"
-                    onClick={closeMobileMenu}
-                    className="flex items-center px-3 py-2 rounded-lg text-base font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-200"
-                  >
-                    <LogIn className="w-5 h-5 mr-3" />
-                    Sign in
-                  </Link>
-                  <Link
-                    to="/signup"
-                    onClick={closeMobileMenu}
-                    className="flex items-center px-3 py-2 rounded-lg text-base font-medium text-white bg-primary-600 hover:bg-primary-700 transition-colors duration-200"
-                  >
-                    <UserPlus className="w-5 h-5 mr-3" />
-                    Sign up
-                  </Link>
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-3 mt-3">
+                  <div className="px-3 py-2 text-sm text-gray-600 dark:text-gray-400">
+                    Welcome to CampusConnect
+                  </div>
                 </div>
               )}
             </div>

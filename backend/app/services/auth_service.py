@@ -1,338 +1,475 @@
 """
-Authentication service module.
+Authentication service with OTP-based email verification.
 
-This module provides business logic for user authentication operations
-including registration, login, password management, and user data operations.
+This module provides authentication functionality including user registration,
+login, OTP generation and verification, and integration with the email service.
 """
 
-from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError
-from werkzeug.security import generate_password_hash, check_password_hash
-from typing import Optional, Tuple
-import jwt
+import hashlib
+import secrets
 from datetime import datetime, timedelta
+from typing import Dict, Any, Optional
+from flask import current_app
+from app.services.email_service import EmailService
+from app.models.data_models import ApiResponse
 import logging
 
-from app.models.auth_models import User, UserCreate, UserLogin, UserResponse, UserUpdate, ChangePasswordRequest
-from app.database import get_db
-from app.config import config
-
+# Set up logging
 logger = logging.getLogger(__name__)
 
 
 class AuthService:
-    """Service class for authentication operations."""
+    """Service class for handling authentication operations."""
+    
+    # In-memory storage for OTPs (in production, use Redis or database)
+    _otp_storage = {}
+    _user_sessions = {}
     
     @staticmethod
-    def create_user(user_data: UserCreate) -> Tuple[bool, str, Optional[UserResponse]]:
+    def generate_user_id(email: str) -> str:
         """
-        Create a new user account.
+        Generate a unique user ID based on email.
         
         Args:
-            user_data (UserCreate): User registration data
+            email (str): User email address
             
         Returns:
-            Tuple[bool, str, Optional[UserResponse]]: (success, message, user_data)
+            str: Generated user ID
         """
-        try:
-            with get_db() as db:
-                # Check if user already exists
-                existing_user = db.query(User).filter(User.email == user_data.email.lower()).first()
-                if existing_user:
-                    return False, "User with this email already exists", None
-                
-                # Hash the password
-                password_hash = generate_password_hash(user_data.password)
-                
-                # Create new user
-                db_user = User(
-                    full_name=user_data.full_name,
-                    email=user_data.email.lower(),
-                    password_hash=password_hash,
-                    is_active=True,
-                    is_verified=False  # Email verification can be implemented later
-                )
-                
-                db.add(db_user)
-                db.commit()
-                db.refresh(db_user)
-                
-                # Convert to response model
-                user_response = UserResponse.from_orm(db_user)
-                
-                logger.info(f"User created successfully: {user_data.email}")
-                return True, "User created successfully", user_response
-                
-        except IntegrityError as e:
-            logger.error(f"Database integrity error during user creation: {str(e)}")
-            return False, "User with this email already exists", None
-        except Exception as e:
-            logger.error(f"Error creating user: {str(e)}")
-            return False, "Failed to create user account", None
+        # Create a hash of the email with a salt for uniqueness
+        salt = current_app.config.get('SECRET_KEY', 'default-salt')
+        user_data = f"{email}{salt}".encode('utf-8')
+        user_id = hashlib.sha256(user_data).hexdigest()[:16]
+        return user_id
     
     @staticmethod
-    def authenticate_user(login_data: UserLogin) -> Tuple[bool, str, Optional[UserResponse]]:
+    def is_valid_email_domain(email: str) -> bool:
         """
-        Authenticate user credentials.
+        Check if email domain is allowed for registration.
         
         Args:
-            login_data (UserLogin): User login credentials
+            email (str): Email address to validate
             
         Returns:
-            Tuple[bool, str, Optional[UserResponse]]: (success, message, user_data)
+            bool: True if domain is allowed, False otherwise
         """
-        try:
-            with get_db() as db:
-                # Find user by email
-                user = db.query(User).filter(User.email == login_data.email.lower()).first()
-                
-                if not user:
-                    return False, "Invalid email or password", None
-                
-                if not user.is_active:
-                    return False, "Account is deactivated", None
-                
-                # Check password
-                if not check_password_hash(user.password_hash, login_data.password):
-                    return False, "Invalid email or password", None
-                
-                # Convert to response model
-                user_response = UserResponse.from_orm(user)
-                
-                logger.info(f"User authenticated successfully: {login_data.email}")
-                return True, "Authentication successful", user_response
-                
-        except Exception as e:
-            logger.error(f"Error authenticating user: {str(e)}")
-            return False, "Authentication failed", None
+        allowed_domains = current_app.config.get('ALLOWED_EMAIL_DOMAINS', ['.edu'])
+        
+        for domain in allowed_domains:
+            if email.lower().endswith(domain.lower()):
+                return True
+        
+        return False
     
     @staticmethod
-    def generate_access_token(user: UserResponse, config_name: str = 'development') -> str:
+    def store_otp(email: str, otp: str, purpose: str = "authentication") -> Dict[str, Any]:
         """
-        Generate JWT access token for authenticated user.
+        Store OTP with expiry time for later verification.
         
         Args:
-            user (UserResponse): Authenticated user data
-            config_name (str): Configuration environment name
+            email (str): User email address
+            otp (str): OTP code
+            purpose (str): Purpose of the OTP
             
         Returns:
-            str: JWT access token
+            Dict[str, Any]: Storage result
         """
         try:
-            app_config = config[config_name]
+            expiry_minutes = current_app.config.get('OTP_EXPIRY_MINUTES', 10)
+            expiry_time = datetime.utcnow() + timedelta(minutes=expiry_minutes)
             
-            # Token payload
-            payload = {
-                'user_id': user.id,
-                'email': user.email,
-                'full_name': user.full_name,
-                'exp': datetime.utcnow() + timedelta(seconds=app_config.JWT_ACCESS_TOKEN_EXPIRES),
-                'iat': datetime.utcnow(),
-                'type': 'access'
+            # Create storage key
+            storage_key = f"{email}:{purpose}"
+            
+            # Store OTP data
+            AuthService._otp_storage[storage_key] = {
+                'otp': otp,
+                'email': email,
+                'purpose': purpose,
+                'created_at': datetime.utcnow(),
+                'expires_at': expiry_time,
+                'attempts': 0,
+                'max_attempts': 3
             }
             
-            # Generate token
-            token = jwt.encode(payload, app_config.JWT_SECRET_KEY, algorithm='HS256')
+            logger.info(f"OTP stored for {email} with purpose {purpose}")
             
-            return token
+            return {
+                'success': True,
+                'message': 'OTP stored successfully',
+                'expiry_time': expiry_time.isoformat()
+            }
             
         except Exception as e:
-            logger.error(f"Error generating access token: {str(e)}")
-            raise
+            logger.error(f"Failed to store OTP for {email}: {str(e)}")
+            return {
+                'success': False,
+                'message': 'Failed to store OTP',
+                'error': str(e)
+            }
     
     @staticmethod
-    def verify_access_token(token: str, config_name: str = 'development') -> Optional[dict]:
+    def verify_otp(email: str, otp: str, purpose: str = "authentication") -> Dict[str, Any]:
         """
-        Verify and decode JWT access token.
+        Verify OTP for the given email and purpose.
         
         Args:
-            token (str): JWT access token
-            config_name (str): Configuration environment name
+            email (str): User email address
+            otp (str): OTP code to verify
+            purpose (str): Purpose of the OTP
             
         Returns:
-            Optional[dict]: Decoded token payload or None if invalid
+            Dict[str, Any]: Verification result
         """
         try:
-            app_config = config[config_name]
+            storage_key = f"{email}:{purpose}"
             
-            # Decode token
-            payload = jwt.decode(token, app_config.JWT_SECRET_KEY, algorithms=['HS256'])
+            # Check if OTP exists
+            if storage_key not in AuthService._otp_storage:
+                return {
+                    'success': False,
+                    'message': 'No OTP found for this email and purpose',
+                    'error': 'OTP_NOT_FOUND'
+                }
             
-            # Verify token type
-            if payload.get('type') != 'access':
-                return None
+            otp_data = AuthService._otp_storage[storage_key]
             
-            return payload
+            # Check if OTP has expired
+            if datetime.utcnow() > otp_data['expires_at']:
+                # Clean up expired OTP
+                del AuthService._otp_storage[storage_key]
+                return {
+                    'success': False,
+                    'message': 'OTP has expired',
+                    'error': 'OTP_EXPIRED'
+                }
             
-        except jwt.ExpiredSignatureError:
-            logger.warning("Access token has expired")
-            return None
-        except jwt.InvalidTokenError as e:
-            logger.warning(f"Invalid access token: {str(e)}")
-            return None
+            # Check attempt limit
+            if otp_data['attempts'] >= otp_data['max_attempts']:
+                # Clean up OTP after max attempts
+                del AuthService._otp_storage[storage_key]
+                return {
+                    'success': False,
+                    'message': 'Maximum OTP verification attempts exceeded',
+                    'error': 'MAX_ATTEMPTS_EXCEEDED'
+                }
+            
+            # Increment attempt counter
+            otp_data['attempts'] += 1
+            
+            # Verify OTP
+            if otp_data['otp'] == otp:
+                # OTP is correct - clean up and return success
+                del AuthService._otp_storage[storage_key]
+                
+                logger.info(f"OTP verified successfully for {email}")
+                
+                return {
+                    'success': True,
+                    'message': 'OTP verified successfully',
+                    'user_id': AuthService.generate_user_id(email),
+                    'email': email
+                }
+            else:
+                # OTP is incorrect
+                remaining_attempts = otp_data['max_attempts'] - otp_data['attempts']
+                
+                return {
+                    'success': False,
+                    'message': f'Invalid OTP. {remaining_attempts} attempts remaining',
+                    'error': 'INVALID_OTP',
+                    'remaining_attempts': remaining_attempts
+                }
+                
         except Exception as e:
-            logger.error(f"Error verifying access token: {str(e)}")
-            return None
+            logger.error(f"Error verifying OTP for {email}: {str(e)}")
+            return {
+                'success': False,
+                'message': 'OTP verification failed',
+                'error': 'VERIFICATION_ERROR',
+                'details': str(e)
+            }
     
     @staticmethod
-    def get_user_by_id(user_id: int) -> Optional[UserResponse]:
+    def send_authentication_otp(email: str, user_name: str = None) -> Dict[str, Any]:
         """
-        Get user by ID.
+        Send authentication OTP to user email.
         
         Args:
-            user_id (int): User ID
+            email (str): User email address
+            user_name (str, optional): User name for personalization
             
         Returns:
-            Optional[UserResponse]: User data or None if not found
+            Dict[str, Any]: Result of OTP sending operation
         """
         try:
-            with get_db() as db:
-                user = db.query(User).filter(User.id == user_id, User.is_active == True).first()
+            # Validate email domain
+            if not AuthService.is_valid_email_domain(email):
+                allowed_domains = current_app.config.get('ALLOWED_EMAIL_DOMAINS', ['.edu'])
+                return {
+                    'success': False,
+                    'message': f'Email domain not allowed. Please use an email from: {", ".join(allowed_domains)}',
+                    'error': 'INVALID_EMAIL_DOMAIN'
+                }
+            
+            # Extract name from email if not provided
+            if user_name is None:
+                user_name = email.split('@')[0].replace('.', ' ').title()
+            
+            # Generate and send OTP
+            otp_result = EmailService.send_otp_email(
+                to_email=email,
+                recipient_name=user_name,
+                purpose="authentication"
+            )
+            
+            if otp_result['success']:
+                # Store OTP for verification
+                store_result = AuthService.store_otp(
+                    email=email,
+                    otp=otp_result['otp'],
+                    purpose="authentication"
+                )
                 
-                if not user:
-                    return None
-                
-                return UserResponse.from_orm(user)
+                if store_result['success']:
+                    return {
+                        'success': True,
+                        'message': f'Authentication code sent to {email}',
+                        'expiry_minutes': otp_result['expiry_minutes']
+                    }
+                else:
+                    return {
+                        'success': False,
+                        'message': 'Failed to process authentication request',
+                        'error': 'OTP_STORAGE_FAILED'
+                    }
+            else:
+                return otp_result
                 
         except Exception as e:
-            logger.error(f"Error getting user by ID: {str(e)}")
-            return None
+            logger.error(f"Error sending authentication OTP to {email}: {str(e)}")
+            return {
+                'success': False,
+                'message': 'Failed to send authentication code',
+                'error': 'AUTH_SERVICE_ERROR',
+                'details': str(e)
+            }
     
     @staticmethod
-    def get_user_by_email(email: str) -> Optional[UserResponse]:
+    def send_password_reset_otp(email: str, user_name: str = None) -> Dict[str, Any]:
         """
-        Get user by email.
+        Send password reset OTP to user email.
         
         Args:
-            email (str): User email
+            email (str): User email address
+            user_name (str, optional): User name for personalization
             
         Returns:
-            Optional[UserResponse]: User data or None if not found
+            Dict[str, Any]: Result of OTP sending operation
         """
         try:
-            with get_db() as db:
-                user = db.query(User).filter(User.email == email.lower(), User.is_active == True).first()
+            # Extract name from email if not provided
+            if user_name is None:
+                user_name = email.split('@')[0].replace('.', ' ').title()
+            
+            # Generate and send OTP
+            otp_result = EmailService.send_otp_email(
+                to_email=email,
+                recipient_name=user_name,
+                purpose="password reset"
+            )
+            
+            if otp_result['success']:
+                # Store OTP for verification
+                store_result = AuthService.store_otp(
+                    email=email,
+                    otp=otp_result['otp'],
+                    purpose="password_reset"
+                )
                 
-                if not user:
-                    return None
-                
-                return UserResponse.from_orm(user)
+                if store_result['success']:
+                    return {
+                        'success': True,
+                        'message': f'Password reset code sent to {email}',
+                        'expiry_minutes': otp_result['expiry_minutes']
+                    }
+                else:
+                    return {
+                        'success': False,
+                        'message': 'Failed to process password reset request',
+                        'error': 'OTP_STORAGE_FAILED'
+                    }
+            else:
+                return otp_result
                 
         except Exception as e:
-            logger.error(f"Error getting user by email: {str(e)}")
-            return None
+            logger.error(f"Error sending password reset OTP to {email}: {str(e)}")
+            return {
+                'success': False,
+                'message': 'Failed to send password reset code',
+                'error': 'AUTH_SERVICE_ERROR',
+                'details': str(e)
+            }
     
     @staticmethod
-    def update_user(user_id: int, update_data: UserUpdate) -> Tuple[bool, str, Optional[UserResponse]]:
+    def authenticate_user(email: str, otp: str) -> Dict[str, Any]:
         """
-        Update user information.
+        Authenticate user with email and OTP.
         
         Args:
-            user_id (int): User ID
-            update_data (UserUpdate): Updated user data
+            email (str): User email address
+            otp (str): OTP code
             
         Returns:
-            Tuple[bool, str, Optional[UserResponse]]: (success, message, user_data)
+            Dict[str, Any]: Authentication result
         """
         try:
-            with get_db() as db:
-                user = db.query(User).filter(User.id == user_id, User.is_active == True).first()
+            # Verify OTP
+            verification_result = AuthService.verify_otp(email, otp, "authentication")
+            
+            if verification_result['success']:
+                # Generate session token (in production, use JWT)
+                session_token = secrets.token_urlsafe(32)
+                user_id = verification_result['user_id']
                 
-                if not user:
-                    return False, "User not found", None
+                # Store session
+                AuthService._user_sessions[session_token] = {
+                    'user_id': user_id,
+                    'email': email,
+                    'created_at': datetime.utcnow(),
+                    'expires_at': datetime.utcnow() + timedelta(hours=24)
+                }
                 
-                # Update fields if provided
-                if update_data.full_name is not None:
-                    user.full_name = update_data.full_name
+                logger.info(f"User authenticated successfully: {email}")
                 
-                if update_data.email is not None:
-                    # Check if email is already taken by another user
-                    existing_user = db.query(User).filter(
-                        User.email == update_data.email.lower(),
-                        User.id != user_id
-                    ).first()
-                    
-                    if existing_user:
-                        return False, "Email is already taken by another user", None
-                    
-                    user.email = update_data.email.lower()
-                    user.is_verified = False  # Reset verification status
+                return {
+                    'success': True,
+                    'message': 'Authentication successful',
+                    'user_id': user_id,
+                    'email': email,
+                    'session_token': session_token
+                }
+            else:
+                return verification_result
                 
-                db.commit()
-                db.refresh(user)
-                
-                user_response = UserResponse.from_orm(user)
-                
-                logger.info(f"User updated successfully: {user.email}")
-                return True, "User updated successfully", user_response
-                
-        except IntegrityError as e:
-            logger.error(f"Database integrity error during user update: {str(e)}")
-            return False, "Email is already taken by another user", None
         except Exception as e:
-            logger.error(f"Error updating user: {str(e)}")
-            return False, "Failed to update user", None
+            logger.error(f"Error authenticating user {email}: {str(e)}")
+            return {
+                'success': False,
+                'message': 'Authentication failed',
+                'error': 'AUTH_ERROR',
+                'details': str(e)
+            }
     
     @staticmethod
-    def change_password(user_id: int, password_data: ChangePasswordRequest) -> Tuple[bool, str]:
+    def verify_session(session_token: str) -> Dict[str, Any]:
         """
-        Change user password.
+        Verify user session token.
         
         Args:
-            user_id (int): User ID
-            password_data (ChangePasswordRequest): Password change data
+            session_token (str): Session token to verify
             
         Returns:
-            Tuple[bool, str]: (success, message)
+            Dict[str, Any]: Session verification result
         """
         try:
-            with get_db() as db:
-                user = db.query(User).filter(User.id == user_id, User.is_active == True).first()
-                
-                if not user:
-                    return False, "User not found"
-                
-                # Verify current password
-                if not check_password_hash(user.password_hash, password_data.current_password):
-                    return False, "Current password is incorrect"
-                
-                # Hash new password
-                new_password_hash = generate_password_hash(password_data.new_password)
-                user.password_hash = new_password_hash
-                
-                db.commit()
-                
-                logger.info(f"Password changed successfully for user: {user.email}")
-                return True, "Password changed successfully"
-                
+            if session_token not in AuthService._user_sessions:
+                return {
+                    'valid': False,
+                    'message': 'Invalid session token',
+                    'error': 'INVALID_SESSION'
+                }
+            
+            session_data = AuthService._user_sessions[session_token]
+            
+            # Check if session has expired
+            if datetime.utcnow() > session_data['expires_at']:
+                # Clean up expired session
+                del AuthService._user_sessions[session_token]
+                return {
+                    'valid': False,
+                    'message': 'Session has expired',
+                    'error': 'SESSION_EXPIRED'
+                }
+            
+            return {
+                'valid': True,
+                'message': 'Session is valid',
+                'user_id': session_data['user_id'],
+                'email': session_data['email']
+            }
+            
         except Exception as e:
-            logger.error(f"Error changing password: {str(e)}")
-            return False, "Failed to change password"
+            logger.error(f"Error verifying session: {str(e)}")
+            return {
+                'valid': False,
+                'message': 'Session verification failed',
+                'error': 'SESSION_ERROR',
+                'details': str(e)
+            }
     
     @staticmethod
-    def deactivate_user(user_id: int) -> Tuple[bool, str]:
+    def logout_user(session_token: str) -> Dict[str, Any]:
         """
-        Deactivate user account.
+        Logout user by invalidating session token.
         
         Args:
-            user_id (int): User ID
+            session_token (str): Session token to invalidate
             
         Returns:
-            Tuple[bool, str]: (success, message)
+            Dict[str, Any]: Logout result
         """
         try:
-            with get_db() as db:
-                user = db.query(User).filter(User.id == user_id).first()
-                
-                if not user:
-                    return False, "User not found"
-                
-                user.is_active = False
-                db.commit()
-                
-                logger.info(f"User deactivated: {user.email}")
-                return True, "User account deactivated successfully"
+            if session_token in AuthService._user_sessions:
+                del AuthService._user_sessions[session_token]
+                return {
+                    'success': True,
+                    'message': 'Logged out successfully'
+                }
+            else:
+                return {
+                    'success': False,
+                    'message': 'Invalid session token',
+                    'error': 'INVALID_SESSION'
+                }
                 
         except Exception as e:
-            logger.error(f"Error deactivating user: {str(e)}")
-            return False, "Failed to deactivate user account"
+            logger.error(f"Error during logout: {str(e)}")
+            return {
+                'success': False,
+                'message': 'Logout failed',
+                'error': 'LOGOUT_ERROR',
+                'details': str(e)
+            }
+    
+    @staticmethod
+    def cleanup_expired_data():
+        """
+        Clean up expired OTPs and sessions.
+        This should be called periodically (e.g., via a background task).
+        """
+        try:
+            current_time = datetime.utcnow()
+            
+            # Clean up expired OTPs
+            expired_otps = [
+                key for key, data in AuthService._otp_storage.items()
+                if current_time > data['expires_at']
+            ]
+            
+            for key in expired_otps:
+                del AuthService._otp_storage[key]
+            
+            # Clean up expired sessions
+            expired_sessions = [
+                token for token, data in AuthService._user_sessions.items()
+                if current_time > data['expires_at']
+            ]
+            
+            for token in expired_sessions:
+                del AuthService._user_sessions[token]
+            
+            logger.info(f"Cleaned up {len(expired_otps)} expired OTPs and {len(expired_sessions)} expired sessions")
+            
+        except Exception as e:
+            logger.error(f"Error during cleanup: {str(e)}")
