@@ -26,6 +26,7 @@ def create_sample_users():
             'password': 'Password123!',
             'major': 'Computer Science',
             'year_of_study': 'junior',
+            'user_role': 'student',
             'bio': 'Passionate about AI and machine learning. Love coding and solving complex problems.',
             'phone': '+1-555-0101'
         },
@@ -36,6 +37,7 @@ def create_sample_users():
             'password': 'Password123!',
             'major': 'Business Administration',
             'year_of_study': 'senior',
+            'user_role': 'student',
             'bio': 'Future entrepreneur with interests in sustainable business practices.',
             'phone': '+1-555-0102'
         },
@@ -46,6 +48,7 @@ def create_sample_users():
             'password': 'Password123!',
             'major': 'Psychology',
             'year_of_study': 'sophomore',
+            'user_role': 'student',
             'bio': 'Studying human behavior and mental health. Aspiring therapist.',
             'phone': '+1-555-0103'
         },
@@ -56,6 +59,7 @@ def create_sample_users():
             'password': 'Password123!',
             'major': 'Art History',
             'year_of_study': 'freshman',
+            'user_role': 'student',
             'bio': 'Art enthusiast and museum lover. Exploring the intersection of art and technology.',
             'phone': '+1-555-0104'
         },
@@ -66,6 +70,7 @@ def create_sample_users():
             'password': 'Password123!',
             'major': 'Engineering',
             'year_of_study': 'graduate',
+            'user_role': 'teacher',
             'bio': 'PhD candidate in Mechanical Engineering. Research focus on renewable energy systems.',
             'phone': '+1-555-0105'
         }
@@ -87,6 +92,7 @@ def create_sample_users():
                 phone=user_data['phone'],
                 major=user_data['major'],
                 year_of_study=user_data['year_of_study'],
+                user_role=user_data['user_role'],
                 bio=user_data['bio'],
                 is_verified=True,
                 is_active=True

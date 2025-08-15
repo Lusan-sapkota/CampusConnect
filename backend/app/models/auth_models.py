@@ -68,6 +68,7 @@ class User(Base):
     # Academic information
     major = Column(String(100), nullable=False)
     year_of_study = Column(String(20), nullable=False)
+    user_role = Column(String(20), nullable=False, default='student')  # student, teacher, management
     
     # Profile picture
     profile_picture_url = Column(String(500), nullable=True)
@@ -118,6 +119,7 @@ class User(Base):
             'phone': self.phone,
             'major': self.major,
             'year_of_study': self.year_of_study,
+            'user_role': self.user_role,
             'profile_picture': self.profile_picture_url,
             'is_active': self.is_active,
             'is_verified': self.is_verified,

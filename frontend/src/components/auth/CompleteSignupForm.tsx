@@ -17,6 +17,7 @@ interface SignupFormData {
   phone: string;
   major: string;
   yearOfStudy: string;
+  userRole: string;
   bio: string;
   profilePicture: File | null;
   acceptTerms: boolean;
@@ -37,6 +38,7 @@ const CompleteSignupForm: React.FC<CompleteSignupFormProps> = ({ onSuccess, onSw
     phone: '',
     major: '',
     yearOfStudy: '',
+    userRole: '',
     bio: '',
     profilePicture: null,
     acceptTerms: false,
@@ -94,6 +96,11 @@ const CompleteSignupForm: React.FC<CompleteSignupFormProps> = ({ onSuccess, onSw
     // Year of study validation
     if (!formData.yearOfStudy) {
       errors.yearOfStudy = 'Year of study is required';
+    }
+
+    // User role validation
+    if (!formData.userRole) {
+      errors.userRole = 'User role is required';
     }
 
     // Bio validation (optional but limit characters)
@@ -171,6 +178,7 @@ const CompleteSignupForm: React.FC<CompleteSignupFormProps> = ({ onSuccess, onSw
       phone: formData.phone,
       major: formData.major,
       yearOfStudy: formData.yearOfStudy,
+      userRole: formData.userRole,
       bio: formData.bio,
       profilePicture: formData.profilePicture,
     };
@@ -191,6 +199,7 @@ const CompleteSignupForm: React.FC<CompleteSignupFormProps> = ({ onSuccess, onSw
       phone: formData.phone,
       major: formData.major,
       yearOfStudy: formData.yearOfStudy,
+      userRole: formData.userRole,
       bio: formData.bio,
       profilePicture: formData.profilePicture,
     };
@@ -459,6 +468,29 @@ const CompleteSignupForm: React.FC<CompleteSignupFormProps> = ({ onSuccess, onSw
               </select>
               {validationErrors.yearOfStudy && (
                 <p className="text-red-500 text-sm mt-1">{validationErrors.yearOfStudy}</p>
+              )}
+            </div>
+
+            {/* User Role */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <User className="w-4 h-4 inline mr-1" />
+                Role *
+              </label>
+              <select
+                value={formData.userRole}
+                onChange={(e) => handleInputChange('userRole', e.target.value)}
+                className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
+                  validationErrors.userRole ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                }`}
+              >
+                <option value="">Select role</option>
+                <option value="student">Student</option>
+                <option value="teacher">Teacher</option>
+                <option value="management">Management</option>
+              </select>
+              {validationErrors.userRole && (
+                <p className="text-red-500 text-sm mt-1">{validationErrors.userRole}</p>
               )}
             </div>
 

@@ -1,16 +1,15 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Users, Calendar, LogIn, UserPlus, LogOut, Menu, X, User } from 'lucide-react';
+import { Home, Users, Calendar, LogIn, UserPlus, Menu, X, User, LogOut } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import ThemeToggle from './ThemeToggle';
+import ProfileDropdown from './ProfileDropdown';
 import Avatar from './Avatar';
 
 const Navbar: React.FC = () => {
   const location = useLocation();
   const { state, logout } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [showUserMenu, setShowUserMenu] = useState(false);
-  const userMenuRef = useRef<HTMLDivElement>(null);
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -24,22 +23,7 @@ const Navbar: React.FC = () => {
 
   const handleLogout = async () => {
     await logout();
-    setShowUserMenu(false);
   };
-
-  // Close user menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
-        setShowUserMenu(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
 
   // Navigation items as modular components
   const NavItem = ({ 
@@ -87,43 +71,7 @@ const Navbar: React.FC = () => {
   );
 
   const UserMenu = () => {
-    const user = state.user;
-    if (!user) return null;
-    
-    const userName = `${user.first_name || ''} ${user.last_name || ''}`.trim() || 
-                     user.email.split('@')[0].replace('.', ' ').replace(/\b\w/g, l => l.toUpperCase());
-    
-    return (
-      <div className="relative" ref={userMenuRef}>
-        <button
-          onClick={() => setShowUserMenu(!showUserMenu)}
-          className="flex items-center space-x-2 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200"
-        >
-          <Avatar
-            src={user.profile_picture}
-            name={userName}
-            size="sm"
-          />
-          <span className="text-sm font-medium text-gray-700 dark:text-gray-300 hidden md:block">{userName}</span>
-        </button>
-        
-        {showUserMenu && (
-          <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50">
-            <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
-              <p className="text-sm font-medium text-gray-900 dark:text-white">{userName}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">{user.email}</p>
-            </div>
-            <button
-              onClick={handleLogout}
-              className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-            >
-              <LogOut className="w-4 h-4 mr-2" />
-              Sign out
-            </button>
-          </div>
-        )}
-      </div>
-    );
+    return <ProfileDropdown />;
   };
 
   return (
