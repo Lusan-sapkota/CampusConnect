@@ -45,15 +45,11 @@
                 </li>
               </ul>
               <ul>
-                <li class="toctree-l1"><a class="reference internal" href="../assets/">Assets</a>
-                </li>
-              </ul>
-              <ul>
                 <li class="toctree-l1"><a class="reference internal" href="../author/">Author</a>
                 </li>
               </ul>
               <ul>
-                <li class="toctree-l1"><a class="reference internal" href="../api/">API</a>
+                <li class="toctree-l1"><a class="reference internal" href="../contributing/">Contributing</a>
                 </li>
               </ul>
               <ul>
@@ -71,6 +67,22 @@
               <ul class="current">
                 <li class="toctree-l1 current"><a class="reference internal current" href="#">Future Changes</a>
     <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#otp-based-authentication">🔐 OTP-Based Authentication</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#password-reset">🔄 Password Reset</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#session-management">🔒 Session Management</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#react-context">🧠 React Context</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#custom-hooks">🧩 Custom Hooks</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#typescript-support">🛡 TypeScript Support</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#responsive-ui">📱 Responsive UI</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#error-handling">⚠️ Error Handling</a>
+    </li>
     </ul>
                 </li>
               </ul>
@@ -79,19 +91,7 @@
                 </li>
               </ul>
               <ul>
-                <li class="toctree-l1"><a class="" href="../installation/index.md">Installation</a>
-                </li>
-              </ul>
-              <ul>
-                <li class="toctree-l1"><a class="reference internal" href="../license/">License</a>
-                </li>
-              </ul>
-              <ul>
-                <li class="toctree-l1"><a class="reference internal" href="../safety/">Safety</a>
-                </li>
-              </ul>
-              <ul>
-                <li class="toctree-l1"><a class="reference internal" href="../search/">Search</a>
+                <li class="toctree-l1"><a class="reference internal" href="../installiation/">Installation</a>
                 </li>
               </ul>
               <ul>
@@ -99,7 +99,15 @@
                 </li>
               </ul>
               <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../authentication/">Authentication</a>
+                </li>
+              </ul>
+              <ul>
                 <li class="toctree-l1"><a class="reference internal" href="../usage/">Usage</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../license/">License</a>
                 </li>
               </ul>
       </div>
@@ -125,7 +133,57 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <h1 id="flask">Flask</h1>
+                <h1 id="future-changes">Future Changes</h1>
+<p>This section outlines planned improvements and upcoming features for the authentication system of <strong>Campus Connect</strong>. These enhancements aim to increase security, maintainability, and usability for both developers and users.</p>
+<h2 id="otp-based-authentication">🔐 OTP-Based Authentication</h2>
+<ul>
+<li>Improve rate-limiting to prevent OTP brute-force attacks.</li>
+<li>Add support for multi-channel OTP delivery (e.g., SMS).</li>
+<li>Allow OTP auto-fill on supported browsers and devices.</li>
+</ul>
+<h2 id="password-reset">🔄 Password Reset</h2>
+<ul>
+<li>Add CAPTCHA protection to the "Forgot Password" form.</li>
+<li>Include expiration countdown for OTP in the UI.</li>
+<li>Notify users via email if password reset was requested.</li>
+</ul>
+<h2 id="session-management">🔒 Session Management</h2>
+<ul>
+<li>Implement refresh tokens with silent token renewal.</li>
+<li>Store tokens securely using HttpOnly cookies.</li>
+<li>Add support for single-session logins (logout from other devices).</li>
+</ul>
+<h2 id="react-context">🧠 React Context</h2>
+<ul>
+<li>Optimize performance by minimizing unnecessary re-renders.</li>
+<li>Integrate user roles/permissions into the context.</li>
+<li>Provide context hydration on page reloads.</li>
+</ul>
+<h2 id="custom-hooks">🧩 Custom Hooks</h2>
+<ul>
+<li>Extract validation logic into reusable utilities.</li>
+<li>Add loading, success, and error state indicators.</li>
+<li>Improve test coverage for each hook.</li>
+</ul>
+<h2 id="typescript-support">🛡 TypeScript Support</h2>
+<ul>
+<li>Improve TypeScript types for API responses and form data.</li>
+<li>Migrate remaining JavaScript utility files to TypeScript.</li>
+<li>Introduce strict mode for better type safety.</li>
+</ul>
+<h2 id="responsive-ui">📱 Responsive UI</h2>
+<ul>
+<li>Improve accessibility (ARIA roles, keyboard navigation).</li>
+<li>Add dark mode support.</li>
+<li>Refactor components for better responsiveness on tablets.</li>
+</ul>
+<h2 id="error-handling">⚠️ Error Handling</h2>
+<ul>
+<li>Introduce user-friendly error modals and alerts.</li>
+<li>Add logging and monitoring for backend failures.</li>
+<li>Provide contextual error messages tied to specific form fields.</li>
+</ul>
+<p>Stay tuned! These changes are in the pipeline to improve both user experience and system robustness.</p>
               
             </div>
           </div><footer>

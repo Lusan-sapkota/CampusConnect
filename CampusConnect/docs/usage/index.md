@@ -31,12 +31,3 @@ This helps if you've forgotten your password.
 - You can log out anytime to clear your session.
 
 ---
-
-## ⚛️ React Usage
-
-### Authentication Context
-
-Use React Context to check if a user is logged in:
-
-```tsx
-const { isAuthenticated, user, login, logout } = useAuth();

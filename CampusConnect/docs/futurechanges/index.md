@@ -50,6 +50,6 @@ This section outlines planned improvements and upcoming features for the authent
 - Add logging and monitoring for backend failures.
 - Provide contextual error messages tied to specific form fields.
 
----
+
 
 Stay tuned! These changes are in the pipeline to improve both user experience and system robustness.

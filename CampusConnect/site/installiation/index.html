@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <link rel="shortcut icon" href="../img/favicon.ico" />
-    <title>Index - Campus Connect</title>
+    <title>Installation - Campus Connect</title>
     <link rel="stylesheet" href="../css/theme.css" />
     <link rel="stylesheet" href="../css/theme_extra.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
@@ -13,7 +13,7 @@
     
       <script>
         // Current page data
-        var mkdocs_page_name = "Index";
+        var mkdocs_page_name = "Installation";
         var mkdocs_page_input_path = "installiation\\index.md";
         var mkdocs_page_url = null;
       </script>
@@ -45,15 +45,11 @@
                 </li>
               </ul>
               <ul>
-                <li class="toctree-l1"><a class="reference internal" href="../assets/">Assets</a>
-                </li>
-              </ul>
-              <ul>
                 <li class="toctree-l1"><a class="reference internal" href="../author/">Author</a>
                 </li>
               </ul>
               <ul>
-                <li class="toctree-l1"><a class="reference internal" href="../api/">API</a>
+                <li class="toctree-l1"><a class="reference internal" href="../contributing/">Contributing</a>
                 </li>
               </ul>
               <ul>
@@ -76,20 +72,22 @@
                 <li class="toctree-l1"><a class="reference internal" href="../images/">Images</a>
                 </li>
               </ul>
-              <ul>
-                <li class="toctree-l1"><a class="" href="../installation/index.md">Installation</a>
-                </li>
-              </ul>
-              <ul>
-                <li class="toctree-l1"><a class="reference internal" href="../license/">License</a>
-                </li>
-              </ul>
-              <ul>
-                <li class="toctree-l1"><a class="reference internal" href="../safety/">Safety</a>
-                </li>
-              </ul>
-              <ul>
-                <li class="toctree-l1"><a class="reference internal" href="../search/">Search</a>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="#">Installation</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#prerequisites">Prerequisites</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#backend-setup">Backend Setup</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#frontend-setup">Frontend Setup</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#environment-variables">Environment Variables</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#database-initialization">Database Initialization</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#accessing-the-app">Accessing the App</a>
+    </li>
+    </ul>
                 </li>
               </ul>
               <ul>
@@ -97,7 +95,15 @@
                 </li>
               </ul>
               <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../authentication/">Authentication</a>
+                </li>
+              </ul>
+              <ul>
                 <li class="toctree-l1"><a class="reference internal" href="../usage/">Usage</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../license/">License</a>
                 </li>
               </ul>
       </div>
@@ -114,7 +120,7 @@
         <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
-      <li class="breadcrumb-item active">Index</li>
+      <li class="breadcrumb-item active">Installation</li>
     <li class="wy-breadcrumbs-aside">
     </li>
   </ul>
@@ -123,27 +129,48 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <p>MIT License</p>
-<p>Copyright (c) 2025 Lusan Sapkota</p>
-<p>Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:</p>
-<p>The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.</p>
-<p>THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-Footer</p>
+                <h1 id="campusconnect-installation-guide">CampusConnect Installation Guide</h1>
+<h2 id="prerequisites">Prerequisites</h2>
+<ul>
+<li>Node.js (v18+)</li>
+<li>Python (v3.9+)</li>
+<li>pip (Python package manager)</li>
+</ul>
+<h2 id="backend-setup">Backend Setup</h2>
+<pre><code class="language-sh">cd backend
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+python init_database.py #Optional
+python run.py
+</code></pre>
+<h2 id="frontend-setup">Frontend Setup</h2>
+<pre><code class="language-sh">cd frontend
+npm install
+npm run dev
+</code></pre>
+<h2 id="environment-variables">Environment Variables</h2>
+<ul>
+<li>Copy <code>.env.example</code> to <code>.env</code> in the backend folder and update values as needed.</li>
+</ul>
+<pre><code class="language-sh">cp .env.example .env
+</code></pre>
+<h2 id="database-initialization">Database Initialization</h2>
+<ul>
+<li>Run <code>python backend/init_database.py</code> to create tables and sample data.</li>
+</ul>
+<h2 id="accessing-the-app">Accessing the App</h2>
+<ul>
+<li>Frontend: http://localhost:5173</li>
+<li>Backend API: http://localhost:5000/api</li>
+</ul>
               
             </div>
           </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../images/" class="btn btn-neutral float-left" title="Images"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../uninstall/" class="btn btn-neutral float-right" title="Uninstall">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
 
   <hr/>
 
@@ -165,6 +192,10 @@ Footer</p>
   <span class="rst-current-version" data-toggle="rst-current-version">
     
     
+      <span><a href="../images/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../uninstall/" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>

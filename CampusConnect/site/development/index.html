@@ -45,20 +45,34 @@
                 </li>
               </ul>
               <ul>
-                <li class="toctree-l1"><a class="reference internal" href="../assets/">Assets</a>
-                </li>
-              </ul>
-              <ul>
                 <li class="toctree-l1"><a class="reference internal" href="../author/">Author</a>
                 </li>
               </ul>
               <ul>
-                <li class="toctree-l1"><a class="reference internal" href="../api/">API</a>
+                <li class="toctree-l1"><a class="reference internal" href="../contributing/">Contributing</a>
                 </li>
               </ul>
               <ul class="current">
                 <li class="toctree-l1 current"><a class="reference internal current" href="#">Development</a>
     <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#usage">Usage</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#basic-example">Basic Example</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#error-handling">Error Handling</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#endpoints">Endpoints</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#configuration">Configuration</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#types">Types</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#summary">Summary</a>
+    </li>
     </ul>
                 </li>
               </ul>
@@ -79,19 +93,7 @@
                 </li>
               </ul>
               <ul>
-                <li class="toctree-l1"><a class="" href="../installation/index.md">Installation</a>
-                </li>
-              </ul>
-              <ul>
-                <li class="toctree-l1"><a class="reference internal" href="../license/">License</a>
-                </li>
-              </ul>
-              <ul>
-                <li class="toctree-l1"><a class="reference internal" href="../safety/">Safety</a>
-                </li>
-              </ul>
-              <ul>
-                <li class="toctree-l1"><a class="reference internal" href="../search/">Search</a>
+                <li class="toctree-l1"><a class="reference internal" href="../installiation/">Installation</a>
                 </li>
               </ul>
               <ul>
@@ -99,7 +101,15 @@
                 </li>
               </ul>
               <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../authentication/">Authentication</a>
+                </li>
+              </ul>
+              <ul>
                 <li class="toctree-l1"><a class="reference internal" href="../usage/">Usage</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../license/">License</a>
                 </li>
               </ul>
       </div>
@@ -125,12 +135,103 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <h1 id="flask">Flask</h1>
+                <h1 id="development-guide">Development Guide</h1>
+<p>This document explains how to use the frontend API client in <strong>Campus Connect</strong> to communicate with the Flask backend.</p>
+<hr />
+<h2 id="overview">Overview</h2>
+<p>The API client is written in <strong>TypeScript</strong> and provides a clean, type-safe interface to backend endpoints. It supports events, groups, and posts, and includes legacy functions for backward compatibility.</p>
+<hr />
+<h2 id="usage">Usage</h2>
+<h3 id="basic-example">Basic Example</h3>
+<pre><code class="language-ts">import { api } from '../api';
+
+// Get all events
+const events = await api.events.getAll();
+
+// Get an event by ID
+const event = await api.events.getById('1');
+
+// Join an event
+await api.events.join('1', {
+  userName: 'John Doe',
+  userEmail: 'john@example.com',
+});
+````
+
+---
+
+### Legacy Functions
+
+```ts
+import { getEvents, joinEvent } from '../api';
+
+// Get events (legacy)
+const events = await getEvents();
+
+// Join event (legacy)
+await joinEvent({
+  eventId: '1',
+  userName: 'John Doe',
+  userEmail: 'john@example.com',
+});
+</code></pre>
+<hr />
+<h3 id="error-handling">Error Handling</h3>
+<pre><code class="language-ts">import { api, ApiError } from '../api';
+
+try {
+  const events = await api.events.getAll();
+} catch (error) {
+  if (error instanceof ApiError) {
+    console.error('API Error:', error.message);
+  } else {
+    console.error('Unexpected Error:', error);
+  }
+}
+</code></pre>
+<hr />
+<h2 id="endpoints">Endpoints</h2>
+<ul>
+<li><strong>Events</strong>
+  <code>getAll()</code>, <code>getById(id)</code>, <code>join(id, userData)</code></li>
+<li><strong>Groups</strong>
+  <code>getAll()</code>, <code>getById(id)</code>, <code>join(id, userData)</code></li>
+<li><strong>Posts</strong>
+  <code>getAll()</code>, <code>create(postData)</code>, <code>like(id, userData)</code></li>
+</ul>
+<p>All available under the <code>api</code> object.</p>
+<hr />
+<h2 id="configuration">Configuration</h2>
+<p>The API base URL is:</p>
+<pre><code>http://localhost:5000/api
+</code></pre>
+<p>You can change it in the <code>api.ts</code> file.</p>
+<hr />
+<h2 id="types">Types</h2>
+<p>The client exports useful types for better development experience:</p>
+<pre><code class="language-ts">import type {
+  Event,
+  Group,
+  Post,
+  ApiResponse,
+  JoinEventRequest
+} from '../api';
+</code></pre>
+<hr />
+<h2 id="summary">Summary</h2>
+<ul>
+<li>Use <code>api</code> methods for all backend interactions.</li>
+<li>Handle errors using <code>ApiError</code>.</li>
+<li>TypeScript types ensure safe and clear development.</li>
+<li>Legacy functions are still available if needed.</li>
+</ul>
+<p>For questions or contributions, check the project README or contact the development team.</p>
+<hr />
               
             </div>
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
-        <a href="../api/" class="btn btn-neutral float-left" title="API"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../contributing/" class="btn btn-neutral float-left" title="Contributing"><span class="icon icon-circle-arrow-left"></span> Previous</a>
         <a href="../faq/" class="btn btn-neutral float-right" title="FAQ">Next <span class="icon icon-circle-arrow-right"></span></a>
     </div>
 
@@ -154,7 +255,7 @@
   <span class="rst-current-version" data-toggle="rst-current-version">
     
     
-      <span><a href="../api/" style="color: #fcfcfc">&laquo; Previous</a></span>
+      <span><a href="../contributing/" style="color: #fcfcfc">&laquo; Previous</a></span>
     
     
       <span><a href="../faq/" style="color: #fcfcfc">Next &raquo;</a></span>
