@@ -24,41 +24,6 @@ This document describes the comprehensive authentication system implemented for 
 - **Error Handling**: Comprehensive error messages
 - **Drag & Drop**: Profile picture upload with drag & drop
 
-## 📁 Complete File Structure
-
-```
-frontend/src/
-├── api/
-│   ├── api.ts              # Complete API client with all auth endpoints
-│   ├── types.ts            # All TypeScript type definitions
-│   └── index.ts            # API exports
-├── contexts/
-│   └── AuthContext.tsx     # Authentication context provider
-├── hooks/
-│   ├── useOTP.ts          # OTP management hook
-│   ├── usePasswordReset.ts # Password reset flow hook
-│   ├── useSignup.ts       # Signup flow hook
-│   ├── useProfile.ts      # Profile management hook
-│   └── index.ts           # Hook exports
-├── components/auth/
-│   ├── LoginForm.tsx      # Login form with OTP
-│   ├── SignupForm.tsx     # Complete signup form with validation
-│   ├── ForgotPasswordForm.tsx # Password reset form
-│   ├── OTPInput.tsx       # Reusable OTP input component
-│   ├── ProtectedRoute.tsx # Route protection component
-│   ├── UserProfile.tsx    # Complete profile management
-│   ├── ProfilePicture.tsx # Profile picture component
-│   └── index.ts           # Component exports
-├── pages/
-│   ├── AuthPage.tsx       # Main authentication page
-│   ├── ProfilePage.tsx    # Dedicated profile page
-│   └── AuthDemoPage.tsx   # Demo/testing page
-└── COMPLETE-AUTH-SYSTEM.md # This documentation
-
-backend/app/routes/
-└── auth.py                # Complete backend with all endpoints
-```
-
 ## 🔧 Backend Endpoints
 
 ### Authentication Endpoints
@@ -108,6 +73,8 @@ function SignupExample() {
   );
 }
 ```
+
+> See the api.ts for the full oversight.
 
 ### Profile Management
 ```tsx
