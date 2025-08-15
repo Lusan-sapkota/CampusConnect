@@ -35,9 +35,9 @@ const OTPVerificationForm: React.FC<OTPVerificationFormProps> = ({ onComplete, o
         onChange={setOtp}
         length={6}
         autoFocus
-        disabled={isSubmitting || isLoading}
+        disabled={isSubmitting}
       />
-      
+
       {error && (
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
           <p className="text-red-600 dark:text-red-400 text-sm text-center">{error}</p>
@@ -46,10 +46,10 @@ const OTPVerificationForm: React.FC<OTPVerificationFormProps> = ({ onComplete, o
 
       <button
         type="submit"
-        disabled={otp.length !== 6 || isSubmitting || isLoading}
+        disabled={otp.length !== 6 || isSubmitting}
         className="w-full bg-primary-500 hover:bg-primary-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center"
       >
-        {isSubmitting || isLoading ? (
+        {isSubmitting ? (
           <>
             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
             Verifying...
@@ -96,7 +96,8 @@ const CompleteSignupForm: React.FC<CompleteSignupFormProps> = ({ onSuccess, onSw
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [currentStep, setCurrentStep] = useState<'form' | 'otp' | 'success'>('form');
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  
+  const [developmentOTP, setDevelopmentOTP] = useState<string | null>(null); //REMOVE THIS IN PRODUCTION
+
   const [formData, setFormData] = useState<SignupFormData>({
     email: '',
     password: '',
@@ -187,7 +188,7 @@ const CompleteSignupForm: React.FC<CompleteSignupFormProps> = ({ onSuccess, onSw
 
   const handleInputChange = (field: keyof SignupFormData, value: string | boolean | File | null) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    
+
     // Clear validation error for this field
     if (validationErrors[field]) {
       setValidationErrors(prev => ({ ...prev, [field]: '' }));
@@ -210,11 +211,11 @@ const CompleteSignupForm: React.FC<CompleteSignupFormProps> = ({ onSuccess, onSw
       }
 
       setFormData(prev => ({ ...prev, profilePicture: file }));
-      
+
       // Create preview URL
       const url = URL.createObjectURL(file);
       setPreviewUrl(url);
-      
+
       // Clear any previous error
       setValidationErrors(prev => ({ ...prev, profilePicture: '' }));
     }
@@ -233,7 +234,7 @@ const CompleteSignupForm: React.FC<CompleteSignupFormProps> = ({ onSuccess, onSw
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -251,10 +252,14 @@ const CompleteSignupForm: React.FC<CompleteSignupFormProps> = ({ onSuccess, onSw
       profilePicture: formData.profilePicture,
     };
 
-    const success = await completeSignup(signupData);
+    const result = await completeSignup(signupData);
 
-    if (success) {
+    if (result.success) {
       setCurrentStep('otp');
+      // Store OTP for development display
+      if (result.otp) {
+        setDevelopmentOTP(result.otp);
+      }
     }
   };
 
@@ -276,8 +281,8 @@ const CompleteSignupForm: React.FC<CompleteSignupFormProps> = ({ onSuccess, onSw
       ...signupData,
       userRole: formData.userRole
     };
-    const success = await completeSignup(signupDataWithRole, otp);
-    if (success) {
+    const result = await completeSignup(signupDataWithRole, otp);
+    if (result.success) {
       setCurrentStep('success');
       setTimeout(() => {
         onSuccess?.();
@@ -293,26 +298,39 @@ const CompleteSignupForm: React.FC<CompleteSignupFormProps> = ({ onSuccess, onSw
     return (
       <div className="max-w-md mx-auto">
         <div className="text-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Verify Your Email</h2>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Complete Your Registration</h2>
           <p className="text-gray-600 dark:text-gray-300">
             We've sent a verification code to <strong>{formData.email}</strong>
           </p>
+          {developmentOTP && (
+            <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+              <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                <strong>Development Mode:</strong> Your verification code is <strong>{developmentOTP}</strong>
+              </p>
+            </div>
+          )}
         </div>
 
         <OTPVerificationForm
           onComplete={handleOTPVerification}
-          onResend={() => completeSignup({
-            email: formData.email,
-            password: formData.password,
-            firstName: formData.firstName,
-            lastName: formData.lastName,
-            phone: formData.phone,
-            major: formData.major,
-            yearOfStudy: formData.yearOfStudy,
-            userRole: formData.userRole,
-            bio: formData.bio,
-            profilePicture: formData.profilePicture,
-          })}
+          onResend={async () => {
+            const result = await completeSignup({
+              email: formData.email,
+              password: formData.password,
+              firstName: formData.firstName,
+              lastName: formData.lastName,
+              phone: formData.phone,
+              major: formData.major,
+              yearOfStudy: formData.yearOfStudy,
+              userRole: formData.userRole,
+              bio: formData.bio,
+              profilePicture: formData.profilePicture,
+            });
+            if (result.otp) {
+              setDevelopmentOTP(result.otp);
+            }
+            return result.success;
+          }}
           isLoading={state.isLoading}
           error={state.error}
         />
@@ -345,6 +363,12 @@ const CompleteSignupForm: React.FC<CompleteSignupFormProps> = ({ onSuccess, onSw
 
   return (
     <div className="max-w-2xl mx-auto">
+      <div className="text-center mb-8">
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Create Your Account</h2>
+        <p className="text-gray-600 dark:text-gray-300">
+          Join CampusConnect and connect with your campus community
+        </p>
+      </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Profile Picture Section */}
@@ -416,9 +440,8 @@ const CompleteSignupForm: React.FC<CompleteSignupFormProps> = ({ onSuccess, onSw
                 type="text"
                 value={formData.firstName}
                 onChange={(e) => handleInputChange('firstName', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
-                  validationErrors.firstName ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                }`}
+                className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent ${validationErrors.firstName ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                  }`}
                 placeholder="Enter your first name"
               />
               {validationErrors.firstName && (
@@ -435,9 +458,8 @@ const CompleteSignupForm: React.FC<CompleteSignupFormProps> = ({ onSuccess, onSw
                 type="text"
                 value={formData.lastName}
                 onChange={(e) => handleInputChange('lastName', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
-                  validationErrors.lastName ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                }`}
+                className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent ${validationErrors.lastName ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                  }`}
                 placeholder="Enter your last name"
               />
               {validationErrors.lastName && (
@@ -455,9 +477,8 @@ const CompleteSignupForm: React.FC<CompleteSignupFormProps> = ({ onSuccess, onSw
                 type="email"
                 value={formData.email}
                 onChange={(e) => handleInputChange('email', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
-                  validationErrors.email ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                }`}
+                className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent ${validationErrors.email ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                  }`}
                 placeholder="your.email@university.edu"
               />
               {validationErrors.email && (
@@ -475,9 +496,8 @@ const CompleteSignupForm: React.FC<CompleteSignupFormProps> = ({ onSuccess, onSw
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => handleInputChange('phone', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
-                  validationErrors.phone ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                }`}
+                className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent ${validationErrors.phone ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                  }`}
                 placeholder="+1 (555) 123-4567"
               />
               {validationErrors.phone && (
@@ -502,9 +522,8 @@ const CompleteSignupForm: React.FC<CompleteSignupFormProps> = ({ onSuccess, onSw
                 type="text"
                 value={formData.major}
                 onChange={(e) => handleInputChange('major', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
-                  validationErrors.major ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                }`}
+                className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent ${validationErrors.major ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                  }`}
                 placeholder="Computer Science"
               />
               {validationErrors.major && (
@@ -521,9 +540,8 @@ const CompleteSignupForm: React.FC<CompleteSignupFormProps> = ({ onSuccess, onSw
               <select
                 value={formData.yearOfStudy}
                 onChange={(e) => handleInputChange('yearOfStudy', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
-                  validationErrors.yearOfStudy ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                }`}
+                className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent ${validationErrors.yearOfStudy ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                  }`}
               >
                 <option value="">Select year</option>
                 <option value="freshman">Freshman</option>
@@ -547,9 +565,8 @@ const CompleteSignupForm: React.FC<CompleteSignupFormProps> = ({ onSuccess, onSw
               <select
                 value={formData.userRole}
                 onChange={(e) => handleInputChange('userRole', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
-                  validationErrors.userRole ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                }`}
+                className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent ${validationErrors.userRole ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                  }`}
               >
                 <option value="">Select role</option>
                 <option value="student">Student</option>
@@ -571,9 +588,8 @@ const CompleteSignupForm: React.FC<CompleteSignupFormProps> = ({ onSuccess, onSw
                   type={showPassword ? 'text' : 'password'}
                   value={formData.password}
                   onChange={(e) => handleInputChange('password', e.target.value)}
-                  className={`w-full px-3 py-2 pr-10 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
-                    validationErrors.password ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                  }`}
+                  className={`w-full px-3 py-2 pr-10 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent ${validationErrors.password ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                    }`}
                   placeholder="Create a strong password"
                 />
                 <button
@@ -599,9 +615,8 @@ const CompleteSignupForm: React.FC<CompleteSignupFormProps> = ({ onSuccess, onSw
                   type={showConfirmPassword ? 'text' : 'password'}
                   value={formData.confirmPassword}
                   onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
-                  className={`w-full px-3 py-2 pr-10 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
-                    validationErrors.confirmPassword ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                  }`}
+                  className={`w-full px-3 py-2 pr-10 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent ${validationErrors.confirmPassword ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                    }`}
                   placeholder="Confirm your password"
                 />
                 <button
@@ -629,9 +644,8 @@ const CompleteSignupForm: React.FC<CompleteSignupFormProps> = ({ onSuccess, onSw
             value={formData.bio}
             onChange={(e) => handleInputChange('bio', e.target.value)}
             rows={3}
-            className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none ${
-              validationErrors.bio ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-            }`}
+            className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none ${validationErrors.bio ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+              }`}
             placeholder="Tell us a bit about yourself... (optional)"
           />
           <div className="flex justify-between items-center mt-1">

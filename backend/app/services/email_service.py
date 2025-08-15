@@ -252,7 +252,8 @@ class EmailService:
         subject: str,
         html_content: str = None,
         text_content: str = None,
-        from_email: str = None
+        from_email: str = None,
+        reply_to: str = None
     ) -> bool:
         """
         Send an email using SMTP.
@@ -270,33 +271,37 @@ class EmailService:
         try:
             if from_email is None:
                 from_email = current_app.config.get('MAIL_DEFAULT_SENDER')
-            
+            if reply_to is None:
+                reply_to = current_app.config.get('MAIL_REPLY_TO')
+
             if not from_email:
                 raise ValueError("No sender email address configured")
-            
+
             # Create message
             message = MIMEMultipart('alternative')
             message['Subject'] = subject
             message['From'] = from_email
             message['To'] = to_email
-            
+            if reply_to:
+                message.add_header('Reply-To', reply_to)
+
             # Add text content
             if text_content:
-                text_part =MIMEText(text_content, 'plain')
+                text_part = MIMEText(text_content, 'plain')
                 message.attach(text_part)
-            
+
             # Add HTML content
             if html_content:
-                html_part =MIMEText(html_content, 'html')
+                html_part = MIMEText(html_content, 'html')
                 message.attach(html_part)
-            
+
             # Create SMTP connection and send email
             with EmailService.create_smtp_connection() as server:
                 server.send_message(message)
-            
+
             logger.info(f"Email sent successfully to {to_email}")
             return True
-            
+
         except Exception as e:
             logger.error(f"Failed to send email to {to_email}: {str(e)}")
             return False

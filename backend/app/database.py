@@ -163,8 +163,9 @@ def check_database_connection() -> bool:
         return False
     
     try:
+        from sqlalchemy import text
         with engine.connect() as connection:
-            connection.execute("SELECT 1")
+            connection.execute(text("SELECT 1"))
         return True
     except SQLAlchemyError as e:
         logger.error(f"Database connection check failed: {str(e)}")
@@ -202,17 +203,3 @@ def get_db_dependency() -> Generator[Session, None, None]:
     """
     with get_db() as db:
         yield db
-
-# Quick SQLite generator main block
-if __name__ == "__main__":
-    try:
-        try:
-            from app.config import Config
-        except ImportError:
-            from config import Config
-        print(f"Initializing database at: {Config.SQLALCHEMY_DATABASE_URI}")
-        init_database(Config.SQLALCHEMY_DATABASE_URI)
-        create_tables()
-        print("SQLite database and tables created successfully!")
-    except Exception as e:
-        print(f"Error creating database: {e}")

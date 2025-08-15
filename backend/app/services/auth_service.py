@@ -166,9 +166,9 @@ class AuthService:
                 # Send verification email
                 try:
                     EmailService.send_otp_email(
-                        email=user.email,
-                        user_name=user.full_name,
-                        otp_code=otp_code,
+                        to_email=user.email,
+                        recipient_name=user.full_name,
+                        otp=otp_code,
                         purpose='signup'
                     )
                 except Exception as e:
@@ -187,9 +187,19 @@ class AuthService:
                 
         except Exception as e:
             logger.error(f"Error in complete signup: {str(e)}")
+            
+            # Check if it's a database initialization error
+            if "Database not initialized" in str(e):
+                return {
+                    'success': False,
+                    'message': 'Database not initialized. Please contact system administrator.',
+                    'details': {'error': 'database_not_initialized'}
+                }
+            
             return {
                 'success': False,
-                'message': 'Account creation failed. Please try again.'
+                'message': 'Account creation failed. Please try again.',
+                'details': {'error': str(e)}
             }
     
     @classmethod

@@ -24,6 +24,9 @@ def create_app(config_name='development'):
     # Load configuration
     app.config.from_object(config[config_name])
     
+    # Initialize database
+    initialize_database(app)
+    
     # Initialize CORS with configuration
     CORS(app, origins=app.config['CORS_ORIGINS'])
     
@@ -44,9 +47,57 @@ def create_app(config_name='development'):
     # Add a simple health check endpoint
     @app.route('/health')
     def health_check():
-        return {'status': 'healthy', 'message': 'Flask backend API is running'}
+        from .database import get_database_info
+        db_info = get_database_info()
+        return {
+            'status': 'healthy', 
+            'message': 'Flask backend API is running',
+            'database': db_info
+        }
     
     return app
+
+
+def initialize_database(app):
+    """
+    Initialize the database for the Flask application.
+    
+    Args:
+        app (Flask): Flask application instance
+    """
+    from .database import init_database, create_tables, check_database_connection
+    import logging
+    
+    logger = logging.getLogger(__name__)
+    
+    try:
+        # Initialize database with app config
+        database_uri = app.config.get('SQLALCHEMY_DATABASE_URI')
+        if not database_uri:
+            raise ValueError("SQLALCHEMY_DATABASE_URI not found in app config")
+        
+        print(f"Initializing database: {database_uri}")
+        
+        # Initialize database
+        init_database(database_uri, echo=app.config.get('DEBUG', False))
+        
+        # Create tables if they don't exist
+        create_tables()
+        
+        # Check connection
+        if check_database_connection():
+            logger.info("Database initialized and connected successfully")
+            print("✓ Database initialized successfully")
+        else:
+            logger.error("Database connection check failed")
+            print("✗ Database connection check failed")
+            
+    except Exception as e:
+        logger.error(f"Failed to initialize database: {str(e)}")
+        print(f"✗ Database initialization failed: {str(e)}")
+        print("Please run 'python init_database.py' to initialize the database manually")
+        # Don't raise the exception to allow the app to start
+        # This allows for manual database initialization if needed
 
 
 def register_error_handlers(app):

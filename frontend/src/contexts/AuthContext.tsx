@@ -15,13 +15,14 @@ type AuthAction =
   | { type: 'AUTH_SUCCESS'; payload: AuthUser }
   | { type: 'AUTH_ERROR'; payload: string }
   | { type: 'AUTH_LOGOUT' }
-  | { type: 'CLEAR_ERROR' };
+  | { type: 'CLEAR_ERROR' }
+  | { type: 'CLEAR_LOADING' };
 
 // Auth Context Type
 interface AuthContextType {
   state: AuthState;
   login: (email: string, otp: string) => Promise<boolean>;
-  completeSignup: (signupData: any, otp?: string) => Promise<boolean>;
+  completeSignup: (signupData: any, otp?: string) => Promise<{ success: boolean; otp?: string }>;
   logout: () => Promise<void>;
   clearError: () => void;
   checkAuthStatus: () => Promise<void>;
@@ -71,6 +72,12 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
     case 'CLEAR_ERROR':
       return {
         ...state,
+        error: null,
+      };
+    case 'CLEAR_LOADING':
+      return {
+        ...state,
+        isLoading: false,
         error: null,
       };
     default:
@@ -146,7 +153,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const completeSignup = async (signupData: any, otp?: string): Promise<boolean> => {
+  const completeSignup = async (signupData: any, otp?: string): Promise<{ success: boolean; otp?: string }> => {
     dispatch({ type: 'AUTH_START' });
     
     try {
@@ -158,10 +165,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           // Store token in localStorage
           localStorage.setItem('auth_token', response.data.session_token);
           dispatch({ type: 'AUTH_SUCCESS', payload: response.data });
-          return true;
+          return { success: true };
         } else {
           dispatch({ type: 'AUTH_ERROR', payload: response.message || 'Verification failed' });
-          return false;
+          return { success: false };
         }
       } else {
         // Initial signup - just send data
@@ -169,11 +176,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
         if (response.success) {
           // Don't log in yet, wait for OTP verification
-          dispatch({ type: 'CLEAR_ERROR' });
-          return true;
+          // Clear loading state since signup is complete, now waiting for OTP
+          dispatch({ type: 'CLEAR_LOADING' });
+          // Return OTP for development (remove in production)
+          return { 
+            success: true, 
+            otp: (response as any).data?.otp_code 
+          };
         } else {
           dispatch({ type: 'AUTH_ERROR', payload: response.message || 'Signup failed' });
-          return false;
+          return { success: false };
         }
       }
     } catch (error) {
@@ -182,7 +194,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       } else {
         dispatch({ type: 'AUTH_ERROR', payload: 'Signup failed' });
       }
-      return false;
+      return { success: false };
     }
   };
 

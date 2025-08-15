@@ -40,9 +40,12 @@ async function apiRequest<T>(
 ): Promise<T> {
   const url = `${API_BASE}${endpoint}`;
   
+  // Don't set Content-Type for FormData, let browser handle it
+  const isFormData = options.body instanceof FormData;
+  
   const defaultOptions: RequestInit = {
     headers: {
-      'Content-Type': 'application/json',
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
       ...options.headers,
     },
     ...options,
@@ -275,9 +278,6 @@ export const authApi = {
       
       return apiRequest<AuthResponse>('/auth/complete-signup', {
         method: 'POST',
-        headers: {
-          // Don't set Content-Type for FormData, let browser set it with boundary
-        },
         body: formData,
       });
     } else {
@@ -325,7 +325,6 @@ export const authApi = {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
-        // Don't set Content-Type for FormData, let browser set it with boundary
       },
       body: formData,
     });

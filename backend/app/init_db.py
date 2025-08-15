@@ -267,36 +267,40 @@ def create_sample_groups():
 
 def create_sample_posts(users):
     """Create sample posts for testing."""
+    # Get user IDs from the database to avoid session issues
+    with get_db() as db:
+        user_ids = [db.query(User).filter(User.email == user.email).first().id for user in users]
+    
     sample_posts = [
         {
             'title': 'Tips for Acing Technical Interviews',
             'description': 'Just finished my internship interviews and wanted to share some tips that helped me succeed. Practice coding problems daily, understand system design basics, and don\'t forget to ask good questions!',
             'category': 'academic',
-            'author_id': users[0].id  # John Doe
+            'author_id': user_ids[0]  # John Doe
         },
         {
             'title': 'Looking for Study Group - Organic Chemistry',
             'description': 'Anyone interested in forming a study group for Organic Chemistry? I\'m struggling with reaction mechanisms and could use some help. Let\'s meet at the library!',
             'category': 'academic',
-            'author_id': users[2].id  # Mike Johnson
+            'author_id': user_ids[2]  # Mike Johnson
         },
         {
             'title': 'Amazing Art Exhibition Downtown',
             'description': 'Just visited the new contemporary art exhibition at the downtown gallery. The installations are mind-blowing! Highly recommend checking it out before it ends next month.',
             'category': 'social',
-            'author_id': users[3].id  # Sarah Wilson
+            'author_id': user_ids[3]  # Sarah Wilson
         },
         {
             'title': 'Startup Idea: Campus Food Delivery',
             'description': 'Working on a business plan for a campus-specific food delivery service. Would love to get feedback from fellow students. What features would you want to see?',
             'category': 'announcement',
-            'author_id': users[1].id  # Jane Smith
+            'author_id': user_ids[1]  # Jane Smith
         },
         {
             'title': 'Research Opportunity in Renewable Energy',
             'description': 'Our lab is looking for undergraduate research assistants to work on solar panel efficiency projects. Great opportunity to gain hands-on experience. PM me for details!',
             'category': 'academic',
-            'author_id': users[4].id  # Alex Brown
+            'author_id': user_ids[4]  # Alex Brown
         }
     ]
     
@@ -321,27 +325,33 @@ def create_sample_posts(users):
 def create_sample_relationships(users, events, groups, posts):
     """Create sample relationships between users and content."""
     with get_db() as db:
+        # Refresh objects in current session to avoid detached instance errors
+        fresh_users = [db.query(User).filter(User.email == user.email).first() for user in users]
+        fresh_events = [db.query(Event).filter(Event.title == event.title).first() for event in events]
+        fresh_groups = [db.query(Group).filter(Group.name == group.name).first() for group in groups]
+        fresh_posts = [db.query(Post).filter(Post.title == post.title).first() for post in posts]
+        
         # Users join events
-        if len(users) >= 3 and len(events) >= 3:
-            users[0].joined_events.extend([events[0], events[2]])  # John joins tech fair and study abroad
-            users[1].joined_events.extend([events[0], events[1]])  # Jane joins tech fair and music festival
-            users[2].joined_events.extend([events[3], events[4]])  # Mike joins basketball and mental health
+        if len(fresh_users) >= 3 and len(fresh_events) >= 3:
+            fresh_users[0].joined_events.extend([fresh_events[0], fresh_events[2]])  # John joins tech fair and study abroad
+            fresh_users[1].joined_events.extend([fresh_events[0], fresh_events[1]])  # Jane joins tech fair and music festival
+            fresh_users[2].joined_events.extend([fresh_events[3], fresh_events[4]])  # Mike joins basketball and mental health
             
             # Users save events
-            users[0].saved_events.append(events[1])  # John saves music festival
-            users[1].saved_events.append(events[2])  # Jane saves study abroad
+            fresh_users[0].saved_events.append(fresh_events[1])  # John saves music festival
+            fresh_users[1].saved_events.append(fresh_events[2])  # Jane saves study abroad
             
         # Users join groups
-        if len(users) >= 3 and len(groups) >= 3:
-            users[0].joined_groups.extend([groups[0], groups[2]])  # John joins CS club and debate team
-            users[1].joined_groups.extend([groups[3], groups[4]])  # Jane joins environmental and international
-            users[2].joined_groups.append(groups[1])  # Mike joins photography
+        if len(fresh_users) >= 3 and len(fresh_groups) >= 3:
+            fresh_users[0].joined_groups.extend([fresh_groups[0], fresh_groups[2]])  # John joins CS club and debate team
+            fresh_users[1].joined_groups.extend([fresh_groups[3], fresh_groups[4]])  # Jane joins environmental and international
+            fresh_users[2].joined_groups.append(fresh_groups[1])  # Mike joins photography
             
         # Users like posts
-        if len(users) >= 3 and len(posts) >= 3:
-            users[1].liked_posts.extend([posts[0], posts[4]])  # Jane likes John's and Alex's posts
-            users[2].liked_posts.extend([posts[0], posts[3]])  # Mike likes John's and Jane's posts
-            users[3].liked_posts.append(posts[1])  # Sarah likes Mike's post
+        if len(fresh_users) >= 3 and len(fresh_posts) >= 3:
+            fresh_users[1].liked_posts.extend([fresh_posts[0], fresh_posts[4]])  # Jane likes John's and Alex's posts
+            fresh_users[2].liked_posts.extend([fresh_posts[0], fresh_posts[3]])  # Mike likes John's and Jane's posts
+            fresh_users[3].liked_posts.append(fresh_posts[1])  # Sarah likes Mike's post
         
         db.commit()
     

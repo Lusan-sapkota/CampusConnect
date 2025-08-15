@@ -31,7 +31,7 @@ const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, postTitl
   const handleSubmitComment = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newComment.trim()) return;
-    
+
     // Here you would typically send the comment to your API
     console.log('Submitting comment:', newComment);
     setNewComment('');
