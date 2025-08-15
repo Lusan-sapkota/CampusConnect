@@ -1,12 +1,15 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Home, Users, Calendar, Menu, X } from 'lucide-react';
-import { useTheme } from '../contexts/ThemeContext';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Home, Users, Calendar, Menu, X, LogIn, UserPlus, LogOut } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 import ThemeToggle from './ThemeToggle';
 
 const Navbar: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
+  const [showUserMenu, setShowUserMenu] = React.useState(false);
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -16,6 +19,12 @@ const Navbar: React.FC = () => {
 
   const closeMobileMenu = () => {
     setIsMobileMenuOpen(false);
+  };
+
+  const handleLogout = () => {
+    logout();
+    setShowUserMenu(false);
+    navigate('/');
   };
 
   return (
@@ -69,7 +78,58 @@ const Navbar: React.FC = () => {
               <Calendar className="w-4 h-4 mr-2" />
               Events
             </Link>
+            
             <ThemeToggle />
+            
+            {/* Authentication Section */}
+            {user ? (
+              <div className="relative">
+                <button
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200"
+                >
+                  <img
+                    src={user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=6366f1&color=fff`}
+                    alt={user.name}
+                    className="w-8 h-8 rounded-full"
+                  />
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{user.name}</span>
+                </button>
+                
+                {showUserMenu && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50">
+                    <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">{user.name}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">{user.email}</p>
+                    </div>
+                    <button
+                      onClick={handleLogout}
+                      className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    >
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Sign out
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="flex items-center space-x-4">
+                <Link
+                  to="/login"
+                  className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors duration-200"
+                >
+                  <LogIn className="w-4 h-4 mr-2" />
+                  Sign in
+                </Link>
+                <Link
+                  to="/signup"
+                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors duration-200"
+                >
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  Sign up
+                </Link>
+              </div>
+            )}
           </div>
 
           {/* Mobile menu button */}
@@ -128,6 +188,52 @@ const Navbar: React.FC = () => {
                 <Calendar className="w-5 h-5 mr-3" />
                 Events
               </Link>
+              
+              {/* Mobile Authentication Section */}
+              {user ? (
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-3 mt-3">
+                  <div className="flex items-center px-3 py-2 mb-2">
+                    <img
+                      src={user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=6366f1&color=fff`}
+                      alt={user.name}
+                      className="w-8 h-8 rounded-full mr-3"
+                    />
+                    <div>
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">{user.name}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{user.email}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      handleLogout();
+                      closeMobileMenu();
+                    }}
+                    className="flex items-center w-full px-3 py-2 rounded-lg text-base font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-200"
+                  >
+                    <LogOut className="w-5 h-5 mr-3" />
+                    Sign out
+                  </button>
+                </div>
+              ) : (
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-3 mt-3 space-y-1">
+                  <Link
+                    to="/login"
+                    onClick={closeMobileMenu}
+                    className="flex items-center px-3 py-2 rounded-lg text-base font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-200"
+                  >
+                    <LogIn className="w-5 h-5 mr-3" />
+                    Sign in
+                  </Link>
+                  <Link
+                    to="/signup"
+                    onClick={closeMobileMenu}
+                    className="flex items-center px-3 py-2 rounded-lg text-base font-medium text-white bg-primary-600 hover:bg-primary-700 transition-colors duration-200"
+                  >
+                    <UserPlus className="w-5 h-5 mr-3" />
+                    Sign up
+                  </Link>
+                </div>
+              )}
             </div>
           </div>
         )}

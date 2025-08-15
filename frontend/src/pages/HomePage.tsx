@@ -1,11 +1,41 @@
-import React from 'react';
+import React, { useState } from 'react';
 import PostCard from '../components/PostCard';
 import EventCard from '../components/EventCard';
+import ViewAllModal from '../components/ViewAllModal';
 import { posts } from '../data/posts';
 import { events } from '../data/events';
 
 const HomePage: React.FC = () => {
   const upcomingEvents = events.slice(0, 3);
+  const [modalState, setModalState] = useState<{
+    isOpen: boolean;
+    type: 'posts' | 'events' | null;
+    title: string;
+    data: any[];
+  }>({
+    isOpen: false,
+    type: null,
+    title: '',
+    data: []
+  });
+
+  const openModal = (type: 'posts' | 'events', title: string, data: any[]) => {
+    setModalState({
+      isOpen: true,
+      type,
+      title,
+      data
+    });
+  };
+
+  const closeModal = () => {
+    setModalState({
+      isOpen: false,
+      type: null,
+      title: '',
+      data: []
+    });
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -23,7 +53,10 @@ const HomePage: React.FC = () => {
           <div className="lg:col-span-2">
             <div className="flex items-center justify-between mb-4 sm:mb-6">
               <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Campus Feed</h2>
-              <button className="text-primary-500 hover:text-primary-600 dark:text-primary-400 dark:hover:text-primary-300 font-medium text-sm sm:text-base">
+              <button 
+                onClick={() => openModal('posts', 'All Campus Posts', posts)}
+                className="text-primary-500 hover:text-primary-600 dark:text-primary-400 dark:hover:text-primary-300 font-medium text-sm sm:text-base transition-colors duration-200"
+              >
                 View All
               </button>
             </div>
@@ -39,7 +72,10 @@ const HomePage: React.FC = () => {
           <div>
             <div className="flex items-center justify-between mb-4 sm:mb-6">
               <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Upcoming Events</h2>
-              <button className="text-primary-500 hover:text-primary-600 dark:text-primary-400 dark:hover:text-primary-300 font-medium text-sm sm:text-base">
+              <button 
+                onClick={() => openModal('events', 'All Events', events)}
+                className="text-primary-500 hover:text-primary-600 dark:text-primary-400 dark:hover:text-primary-300 font-medium text-sm sm:text-base transition-colors duration-200"
+              >
                 View All
               </button>
             </div>
@@ -71,6 +107,17 @@ const HomePage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* View All Modal */}
+      {modalState.type && (
+        <ViewAllModal
+          isOpen={modalState.isOpen}
+          onClose={closeModal}
+          type={modalState.type}
+          title={modalState.title}
+          data={modalState.data}
+        />
+      )}
     </div>
   );
 };
