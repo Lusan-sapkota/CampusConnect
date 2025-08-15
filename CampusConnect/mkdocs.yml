@@ -1,0 +1,23 @@
+site_name: Campus Connect
+nav:
+  - API: api/index.md
+  - Author: author/index.md
+  - Contributing: contributing/index.md
+  - Development: development/index.md
+  - FAQ: faq/index.md
+  - Features: features/index.md
+  - Future Changes: futurechanges/index.md
+  - Images: images/index.md
+  - Installation: installiation/index.md
+  - Uninstall: uninstall/index.md
+  - Authentication: authentication/index.md
+  - Usage: usage/index.md
+  - License: license/index.md
+theme:
+  name: readthedocs
+  content:
+    max_width: none
+extra_css:
+  - css/style.css
+features:
+  - navigation.expand
