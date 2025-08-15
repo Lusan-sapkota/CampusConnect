@@ -9,3 +9,4 @@ export { ProfilePicture } from './ProfilePicture';
 export { AuthRequiredButton } from './AuthRequiredButton';
 export { default as AuthRequiredModal } from './AuthRequiredModal';
 export { default as CompleteSignupForm } from './CompleteSignupForm';
+export { ChangePasswordForm } from './ChangePasswordForm';

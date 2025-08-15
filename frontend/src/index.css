@@ -11,7 +11,7 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
-  
+
   .line-clamp-3 {
     display: -webkit-box;
     -webkit-line-clamp: 3;
@@ -20,58 +20,49 @@
   }
 }
 
-/* Smooth transitions for theme changes */
 * {
   transition-property: background-color, border-color, color;
   transition-duration: 200ms;
   transition-timing-function: ease-in-out;
 }
 
-/* Custom thin and smooth scrollbar for all modes */
-::-webkit-scrollbar {
+/* Scrollbar colors for light/dark mode */
+:root {
+  --scrollbar-track: #f3f4f6;
+  --scrollbar-thumb: #d1d5db;
+  --scrollbar-thumb-hover: #9ca3af;
+}
+
+html.dark {
+  --scrollbar-track: #1e1e2e;
+  --scrollbar-thumb: #4b4b63;
+  --scrollbar-thumb-hover: #6b6b8c;
+}
+
+/* Webkit scrollbar for all elements */
+*::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
-::-webkit-scrollbar-track {
-  background: #f3f4f6;
+*::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
   border-radius: 9999px;
 }
 
-::-webkit-scrollbar-thumb {
-  background: #d1d5db;
+*::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
   border-radius: 9999px;
   transition: background 0.2s;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #9ca3af;
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
 }
 
-/* Firefox scrollbar */
-html {
+/* Firefox scrollbar for all elements */
+* {
   scrollbar-width: thin;
-  scrollbar-color: #d1d5db #f3f4f6;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
   scroll-behavior: smooth;
-}
-
-/* Lenis smooth scroll styles */
-html.lenis {
-  height: auto;
-}
-
-.lenis.lenis-smooth {
-  scroll-behavior: auto !important;
-}
-
-.lenis.lenis-smooth [data-lenis-prevent] {
-  overscroll-behavior: contain;
-}
-
-.lenis.lenis-stopped {
-  overflow: hidden;
-}
-
-.lenis.lenis-scrolling iframe {
-  pointer-events: none;
 }

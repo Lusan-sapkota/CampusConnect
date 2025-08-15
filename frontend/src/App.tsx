@@ -3,8 +3,10 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { AuthPage } from './pages/AuthPage';
-import { AuthDemoPage } from './pages/AuthDemoPage';
 import { ProfilePage } from './pages/ProfilePage';
+import { JoinedEventsPage } from './pages/JoinedEventsPage';
+import { SavedEventsPage } from './pages/SavedEventsPage';
+import { JoinedGroupsPage } from './pages/JoinedGroupsPage';
 import { useAuth } from './contexts/AuthContext';
 import Navbar from './components/Navbar';
 import HomePage from './pages/HomePage';
@@ -52,10 +54,26 @@ const AppContent: React.FC = () => {
             } 
           />
           <Route 
-            path="/auth-demo" 
+            path="/profile/joined-events" 
             element={
               <ProtectedRoute>
-                <AuthDemoPage />
+                <JoinedEventsPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/profile/saved-events" 
+            element={
+              <ProtectedRoute>
+                <SavedEventsPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/profile/joined-groups" 
+            element={
+              <ProtectedRoute>
+                <JoinedGroupsPage />
               </ProtectedRoute>
             } 
           />

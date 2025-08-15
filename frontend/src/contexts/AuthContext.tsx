@@ -165,6 +165,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           // Store token in localStorage
           localStorage.setItem('auth_token', response.data.session_token);
           dispatch({ type: 'AUTH_SUCCESS', payload: response.data });
+          // Fetch complete profile data after successful verification
+          await checkAuthStatus();
           return { success: true };
         } else {
           dispatch({ type: 'AUTH_ERROR', payload: response.message || 'Verification failed' });

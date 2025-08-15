@@ -13,6 +13,20 @@ interface OTPVerificationFormProps {
 const OTPVerificationForm: React.FC<OTPVerificationFormProps> = ({ onComplete, onResend, isLoading, error }) => {
   const [otp, setOtp] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isResending, setIsResending] = useState(false);
+  const [resendTimer, setResendTimer] = useState(0);
+  const [resendAttempts, setResendAttempts] = useState(0);
+
+  // Timer effect for resend cooldown
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (resendTimer > 0) {
+      interval = setInterval(() => {
+        setResendTimer(prev => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [resendTimer]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,8 +38,21 @@ const OTPVerificationForm: React.FC<OTPVerificationFormProps> = ({ onComplete, o
   };
 
   const handleResend = async () => {
+    if (resendTimer > 0 || isResending) return;
+
+    setIsResending(true);
     setOtp('');
-    await onResend();
+
+    const success = await onResend();
+
+    if (success) {
+      // Increase timer with each attempt: 30s, 60s, 90s, etc.
+      const newTimer = 30 + (resendAttempts * 30);
+      setResendTimer(newTimer);
+      setResendAttempts(prev => prev + 1);
+    }
+
+    setIsResending(false);
   };
 
   return (
@@ -62,10 +89,19 @@ const OTPVerificationForm: React.FC<OTPVerificationFormProps> = ({ onComplete, o
       <button
         type="button"
         onClick={handleResend}
-        disabled={isLoading}
-        className="w-full text-primary-500 hover:text-primary-600 dark:text-primary-400 dark:hover:text-primary-300 font-medium py-2"
+        disabled={isResending || resendTimer > 0}
+        className="w-full text-primary-500 hover:text-primary-600 dark:text-primary-400 dark:hover:text-primary-300 font-medium py-2 disabled:text-gray-400 disabled:cursor-not-allowed flex items-center justify-center"
       >
-        Resend verification code
+        {isResending ? (
+          <>
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
+            Sending...
+          </>
+        ) : resendTimer > 0 ? (
+          `Resend in ${resendTimer}s`
+        ) : (
+          'Resend verification code'
+        )}
       </button>
     </form>
   );
@@ -96,6 +132,8 @@ const CompleteSignupForm: React.FC<CompleteSignupFormProps> = ({ onSuccess, onSw
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [currentStep, setCurrentStep] = useState<'form' | 'otp' | 'success'>('form');
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [developmentOTP, setDevelopmentOTP] = useState<string | null>(null);
+  const [serverErrors, setServerErrors] = useState<Record<string, string>>({});
 
   const [formData, setFormData] = useState<SignupFormData>({
     email: '',
@@ -116,6 +154,30 @@ const CompleteSignupForm: React.FC<CompleteSignupFormProps> = ({ onSuccess, onSw
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
+  // Allowed email domains for campus
+  const ALLOWED_EMAIL_DOMAINS = [
+    'student.university.edu',
+    'university.edu',
+    'campus.edu',
+    'college.edu',
+    'gmail.com', // For testing purposes
+  ];
+
+  // Success redirect effect - must be at top level
+  useEffect(() => {
+    if (currentStep === 'success') {
+      const timer = setTimeout(() => {
+        onSuccess?.();
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [currentStep, onSuccess]);
+
+  const validateEmailDomain = (email: string): boolean => {
+    const domain = email.split('@')[1]?.toLowerCase();
+    return ALLOWED_EMAIL_DOMAINS.includes(domain);
+  };
+
   const validateForm = (): boolean => {
     const errors: Record<string, string> = {};
 
@@ -125,6 +187,8 @@ const CompleteSignupForm: React.FC<CompleteSignupFormProps> = ({ onSuccess, onSw
       errors.email = 'Email is required';
     } else if (!emailRegex.test(formData.email)) {
       errors.email = 'Please enter a valid email address';
+    } else if (!validateEmailDomain(formData.email)) {
+      errors.email = `Email must be from an approved campus domain: ${ALLOWED_EMAIL_DOMAINS.join(', ')}`;
     }
 
     // Password validation
@@ -331,12 +395,6 @@ const CompleteSignupForm: React.FC<CompleteSignupFormProps> = ({ onSuccess, onSw
   }
 
   if (currentStep === 'success') {
-    useEffect(() => {
-      const timer = setTimeout(() => {
-        onSuccess?.();
-      }, 2000);
-      return () => clearTimeout(timer);
-    }, []);
     return (
       <div className="max-w-md mx-auto text-center">
         <div className="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-4">
