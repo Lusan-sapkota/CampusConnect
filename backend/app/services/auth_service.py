@@ -130,6 +130,7 @@ class AuthService:
                     phone=signup_data.get('phone', '').strip() or None,
                     major=signup_data['major'].strip(),
                     year_of_study=signup_data['year_of_study'],
+                    user_role=signup_data.get('user_role', 'student'),
                     bio=signup_data.get('bio', '').strip() or None
                 )
                 

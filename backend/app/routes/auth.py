@@ -90,6 +90,7 @@ class CompleteSignupRequest(BaseModel):
     phone: Optional[str] = Field(None, max_length=20)
     major: str = Field(..., min_length=1, max_length=100)
     year_of_study: str = Field(..., min_length=1, max_length=20)
+    user_role: str = Field(..., pattern="^(student|teacher|management)$", description="User role identifier")
     bio: Optional[str] = Field(None, max_length=500)
     
     class Config:
