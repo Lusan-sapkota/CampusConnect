@@ -488,4 +488,81 @@ class EventService:
                 "image": "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=400",
                 "tags": ["wellness", "mental health", "workshop"]
             }
-        ]
+        ]  
+  
+    @classmethod
+    def get_events_by_category(cls, category: str) -> List[Dict[str, Any]]:
+        """
+        Retrieve events filtered by category.
+        
+        Args:
+            category (str): The category to filter by
+            
+        Returns:
+            List of events in the specified category
+        """
+        try:
+            with get_db() as db:
+                events = db.query(Event).filter(
+                    Event.category == category,
+                    Event.is_active == True
+                ).all()
+                return [event.to_dict() for event in events]
+        except Exception as e:
+            logger.error(f"Error retrieving events by category {category}: {str(e)}")
+            # Return filtered mock data as fallback
+            mock_events = cls._get_mock_events()
+            return [event for event in mock_events if event["category"] == category]
+
+    @classmethod
+    def create_event(cls, create_request, user_id: str) -> ApiResponse:
+        """
+        Create a new event.
+        
+        Args:
+            create_request: The event creation data
+            user_id (str): The ID of the user creating the event
+            
+        Returns:
+            ApiResponse: Success or error response with created event data
+        """
+        try:
+            with get_db() as db:
+                # Find the user
+                user = db.query(User).filter(User.id == user_id).first()
+                if not user:
+                    return ApiResponse(
+                        success=False,
+                        message="User not found"
+                    )
+                
+                # Create new event
+                new_event = Event(
+                    title=create_request.title,
+                    description=create_request.description,
+                    date=create_request.date,
+                    time=create_request.time,
+                    location=create_request.location,
+                    category=create_request.category,
+                    organizer=create_request.organizer,
+                    max_attendees=create_request.max_attendees,
+                    image_url=create_request.image
+                )
+                
+                db.add(new_event)
+                db.commit()
+                db.refresh(new_event)
+                
+                logger.info(f"User {user.email} created event {new_event.title}")
+                return ApiResponse(
+                    success=True,
+                    message="Event created successfully",
+                    data=new_event.to_dict()
+                )
+                
+        except Exception as e:
+            logger.error(f"Error creating event: {str(e)}")
+            return ApiResponse(
+                success=False,
+                message="Failed to create event"
+            )

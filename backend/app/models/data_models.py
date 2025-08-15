@@ -114,11 +114,38 @@ class LikePostRequest(BaseModel):
 class CreatePostRequest(BaseModel):
     """Request schema for creating a new post."""
     title: str = Field(..., min_length=1, max_length=200)
-    description: str = Field(..., min_length=1, max_length=2000)
+    content: str = Field(..., min_length=1, max_length=2000)  # Changed from description to content
     category: Literal['academic', 'social', 'announcement', 'general']
-    author_name: str = Field(..., min_length=1, max_length=100, alias="authorName")
-    author_role: str = Field(..., min_length=1, max_length=100, alias="authorRole")
-    author_avatar: str = Field(..., alias="authorAvatar", description="URL to author avatar")
+
+    class Config:
+        populate_by_name = True
+
+
+class CreateEventRequest(BaseModel):
+    """Request schema for creating a new event."""
+    title: str = Field(..., min_length=1, max_length=200)
+    description: str = Field(..., min_length=1, max_length=2000)
+    date: str = Field(..., description="Date in YYYY-MM-DD format")
+    time: str = Field(..., min_length=1, max_length=100)
+    location: str = Field(..., min_length=1, max_length=200)
+    category: Literal['academic', 'social', 'sports', 'arts', 'career']
+    organizer: str = Field(..., min_length=1, max_length=200)
+    max_attendees: int = Field(gt=0, description="Maximum number of attendees")
+    image: Optional[str] = Field(None, description="URL to event image")
+
+    class Config:
+        populate_by_name = True
+
+
+class CreateGroupRequest(BaseModel):
+    """Request schema for creating a new group."""
+    name: str = Field(..., min_length=1, max_length=200)
+    description: str = Field(..., min_length=1, max_length=2000)
+    category: Literal['academic', 'social', 'sports', 'arts', 'service', 'professional']
+    meeting_time: str = Field(..., min_length=1, max_length=100, alias="meetingTime")
+    location: str = Field(..., min_length=1, max_length=200)
+    contact: str = Field(..., min_length=1, max_length=200)
+    image: Optional[str] = Field(None, description="URL to group image")
 
     class Config:
         populate_by_name = True

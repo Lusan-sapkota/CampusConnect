@@ -62,30 +62,63 @@ def create_post():
         JSON response with created post data or error message
     """
     try:
+        # Debug: Log incoming request headers and raw body
+        print("[DEBUG] Incoming /api/posts request headers:", dict(request.headers))
+        print("[DEBUG] Incoming /api/posts raw data:", request.data)
+
         # TODO: Add authentication check to get user_id
         # For now, we'll use a placeholder
         user_id = request.headers.get('X-User-ID', 'user-1')  # Temporary
-        
-        # Validate request format
-        validation_error = handle_request_validation(request, required_json=True)
-        if validation_error:
-            return validation_error
-        
-        request_data = request.get_json()
-        
+
+        # Handle both JSON and FormData
+        if request.is_json:
+            request_data = request.get_json()
+            print("[DEBUG] Incoming /api/posts JSON body:", request_data)
+            if not request_data:
+                print("[DEBUG] No request body received.")
+                return create_bad_request_response("Request body is required")
+        else:
+            request_data = request.form.to_dict()
+            print("[DEBUG] Incoming /api/posts FormData:", request_data)
+            if not request_data:
+                print("[DEBUG] No form data received.")
+                return create_bad_request_response("Request data is required")
+
         # Validate request data using Pydantic model
         try:
             create_request = CreatePostRequest(**request_data)
         except ValidationError as e:
+            print("[DEBUG] Validation error:", e.errors())
             return create_validation_error_response(e.errors())
-        
+
         # Process create request
         result = PostService.create_post(create_request, user_id)
-        
         if result.success:
             return create_success_response(result.message, result.data, 201)
         else:
             return create_bad_request_response(result.message, result.details)
+        
+            # Debug: Log incoming request headers and body
+            print("[DEBUG] Incoming /api/posts request headers:", dict(request.headers))
+            if request.is_json:
+                request_data = request.get_json()
+                print("[DEBUG] Incoming /api/posts JSON body:", request_data)
+                if not request_data:
+                    print("[DEBUG] No request body received.")
+                    return create_bad_request_response("Request body is required")
+            else:
+                request_data = request.form.to_dict()
+                print("[DEBUG] Incoming /api/posts FormData:", request_data)
+                if not request_data:
+                    print("[DEBUG] No form data received.")
+                    return create_bad_request_response("Request data is required")
+
+            # Validate request data using Pydantic model
+            try:
+                create_request = CreatePostRequest(**request_data)
+            except ValidationError as e:
+                print("[DEBUG] Validation error:", e.errors())
+                return create_validation_error_response(e.errors())
             
     except Exception as e:
         return create_internal_error_response(str(e))

@@ -22,10 +22,8 @@ export interface LikePostRequest {
 
 export interface CreatePostRequest {
   title: string;
-  description: string;
+  content: string;
   category: 'academic' | 'social' | 'announcement' | 'general';
-  authorName: string;
-  authorRole: string;
 }
 
 // Authentication Types

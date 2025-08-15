@@ -57,14 +57,12 @@ async function apiRequest<T>(
     if (!response.ok) {
       let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
       let errorData;
-      
       try {
         errorData = await response.json();
         errorMessage = errorData.message || errorMessage;
       } catch {
         // If response is not JSON, use the default error message
       }
-      
       throw new ApiError(errorMessage, response.status, errorData);
     }
 

@@ -26,8 +26,6 @@ class AuthService:
         'university.edu',
         'campus.edu',
         'college.edu',
-        'gmail.com',  # For testing
-        'example.com'  # For testing
     ]
     
     # Profile picture settings

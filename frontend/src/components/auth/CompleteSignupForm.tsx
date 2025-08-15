@@ -160,7 +160,6 @@ const CompleteSignupForm: React.FC<CompleteSignupFormProps> = ({ onSuccess, onSw
     'university.edu',
     'campus.edu',
     'college.edu',
-    'gmail.com', // For testing purposes
   ];
 
   // Success redirect effect - must be at top level

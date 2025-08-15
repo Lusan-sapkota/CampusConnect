@@ -17,6 +17,10 @@ from datetime import datetime, timedelta
 
 def create_sample_users():
     """Create sample users."""
+    # Initialize database first
+    from app.database import init_db
+    init_db()
+    
     users_data = [
         {
             'email': 'sarah.chen@university.edu',
@@ -44,6 +48,16 @@ def create_sample_users():
             'year_of_study': 'Staff',
             'bio': 'Official campus account for announcements and updates.',
             'password': 'password123'
+        },
+        {
+            'email': 'user1@university.edu',
+            'first_name': 'Test',
+            'last_name': 'User',
+            'major': 'Computer Science',
+            'year_of_study': 'Sophomore',
+            'bio': 'Test user for development.',
+            'password': 'password123',
+            'custom_id': 'user-1'  # Fixed ID for frontend
         }
     ]
     
@@ -57,7 +71,7 @@ def create_sample_users():
                 continue
                 
             user = User(
-                id=str(uuid.uuid4()),
+                id=user_data.get('custom_id', str(uuid.uuid4())),
                 email=user_data['email'],
                 first_name=user_data['first_name'],
                 last_name=user_data['last_name'],

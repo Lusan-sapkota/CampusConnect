@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useOTP } from '../../hooks/useOTP';
 import { OTPInput } from './OTPInput';
+import { authApi } from '../../api';
 
 interface LoginFormProps {
   onSuccess?: () => void;
@@ -14,13 +16,18 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   onForgotPassword,
   onShowSignup
 }) => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [password, setPassword] = useState('');
   const [step, setStep] = useState<'email' | 'otp'>('email');
   const [method, setMethod] = useState<'otp' | 'password'>('otp');
+  const [showPassword, setShowPassword] = useState(false);
   
   const { state: authState, login } = useAuth();
+  const [localError, setLocalError] = useState<string | null>(null);
+  const [isPasswordLoading, setIsPasswordLoading] = useState(false);
+  const [isResendLoading, setIsResendLoading] = useState(false);
   const otpHook = useOTP();
 
   const handleSendOTP = async (e: React.FormEvent) => {
@@ -45,25 +52,39 @@ export const LoginForm: React.FC<LoginFormProps> = ({
     const success = await login(email, otp);
     if (success) {
       onSuccess?.();
+      navigate('/');
     }
   };
 
   const handlePasswordLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLocalError(null);
     if (!email.trim() || !password) {
       return;
     }
-    const success = await login(email, password);
-    if (success) {
-      onSuccess?.();
+    setIsPasswordLoading(true);
+    try {
+      const response = await authApi.loginWithPassword(email.trim(), password);
+      if (response.success && response.data) {
+        localStorage.setItem('auth_token', response.data.session_token);
+        onSuccess?.();
+        navigate('/');
+      } else {
+        setLocalError('Incorrect password');
+      }
+    } catch (err: any) {
+      setLocalError('Incorrect password');
     }
+    setIsPasswordLoading(false);
   };
 
   const handleResendOTP = async () => {
+    setIsResendLoading(true);
     await otpHook.sendOTP({
       email: email.trim(),
       purpose: 'authentication',
     });
+    setIsResendLoading(false);
   };
 
   const goBackToEmail = () => {
@@ -73,7 +94,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   };
 
   const isLoading = authState.isLoading || otpHook.state.isLoading;
-  const error = authState.error || otpHook.state.error;
+  const error = method === 'password' ? localError : authState.error || otpHook.state.error;
 
   return (
     <div className="max-w-md mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
@@ -185,7 +206,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
           </form>
         )
       ) : (
-        <form onSubmit={handlePasswordLogin} className="space-y-4">
+  <form onSubmit={handlePasswordLogin} className="space-y-4">
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Email Address
@@ -201,50 +222,80 @@ export const LoginForm: React.FC<LoginFormProps> = ({
               placeholder="Enter your email"
             />
           </div>
-          <div>
+            <div className="relative">
             <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Password
             </label>
             <input
               id="password"
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={isLoading}
               required
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 dark:disabled:bg-gray-600 disabled:cursor-not-allowed"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 dark:disabled:bg-gray-600 disabled:cursor-not-allowed pr-10"
               placeholder="Enter your password"
             />
-          </div>
+            <button
+              type="button"
+              tabIndex={-1}
+              className="absolute right-2 top-9 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none"
+              onClick={() => setShowPassword((prev) => !prev)}
+              disabled={isLoading}
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+            >
+              {showPassword ? (
+              // Eye open icon
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0zm6 0c0 3.866-3.582 7-8 7s-8-3.134-8-7 3.582-7 8-7 8 3.134 8 7z" />
+              </svg>
+              ) : (
+              // Eye closed icon
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3l18 18M9.88 9.88A3 3 0 0012 15a3 3 0 002.12-5.12M7.05 7.05A7.001 7.001 0 003 12c0 3.866 3.582 7 8 7a7.001 7.001 0 006.95-4.95M17.94 17.94A7.001 7.001 0 0021 12c0-3.866-3.582-7-8-7a7.001 7.001 0 00-4.95 1.95" />
+              </svg>
+              )}
+            </button>
+            </div>
           <button
             type="submit"
-            disabled={isLoading || !email.trim() || !password}
+            disabled={isPasswordLoading || !email.trim() || !password}
             className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200"
           >
-            {isLoading ? 'Signing in...' : 'Sign In'}
+            {isPasswordLoading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
       )}
 
       <div className="mt-6 text-center space-y-2">
-        <button
-          type="button"
-          onClick={onForgotPassword}
-          className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
-        >
-          Forgot your password?
-        </button>
-        <div className="text-sm text-gray-600 dark:text-gray-400">
-          Don't have an account?{' '}
           <button
             type="button"
-            onClick={onShowSignup}
-            className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium"
+            onClick={onForgotPassword}
+            className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
           >
-            Sign up
+            Forgot your password?
           </button>
+          <div className="text-center">
+            <button
+              type="button"
+              onClick={handleResendOTP}
+              disabled={isResendLoading}
+              className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 disabled:text-gray-400 disabled:cursor-not-allowed"
+            >
+              {isResendLoading ? 'Resending...' : "Didn't receive the code? Resend"}
+            </button>
+          </div>
+          <div className="text-sm text-gray-600 dark:text-gray-400">
+            Don't have an account?{' '}
+            <button
+              type="button"
+              onClick={onShowSignup}
+              className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium"
+            >
+              Sign up
+            </button>
+          </div>
         </div>
       </div>
-    </div>
   );
 };

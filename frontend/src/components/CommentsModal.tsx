@@ -64,9 +64,10 @@ const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, postTitl
           </button>
         </div>
 
-        {/* Post Title */}
-        <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-750">
-          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 line-clamp-2 leading-relaxed">
+        <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 dark:border-gray-700 
+                        bg-gray-100 dark:bg-gray-700 rounded-xl mb-2">
+          <p className="text-sm sm:text-base font-semibold 
+                        text-gray-900 dark:text-gray-100 leading-relaxed">
             {postTitle}
           </p>
         </div>

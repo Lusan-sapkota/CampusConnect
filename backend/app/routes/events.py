@@ -72,10 +72,37 @@ def create_event():
         JSON response with created event data or error message
     """
     try:
-        # TODO: Add authentication check
-        # TODO: Implement event creation logic
-        return create_success_response("Event creation not yet implemented", {}, 501)
+        # TODO: Add authentication check to get user_id
+        user_id = request.headers.get('X-User-ID', 'user-1')  # Temporary
         
+        # Handle both JSON and FormData
+        if request.is_json:
+            request_data = request.get_json()
+        else:
+            # Convert FormData to dict
+            request_data = request.form.to_dict()
+            # Convert max_attendees to int if present
+            if 'max_attendees' in request_data:
+                try:
+                    request_data['max_attendees'] = int(request_data['max_attendees'])
+                except ValueError:
+                    return create_bad_request_response("max_attendees must be a number")
+        
+        # Validate request data using Pydantic model
+        try:
+            from app.models.data_models import CreateEventRequest
+            create_request = CreateEventRequest(**request_data)
+        except ValidationError as e:
+            return create_validation_error_response(e.errors())
+        
+        # Process create request
+        result = EventService.create_event(create_request, user_id)
+        
+        if result.success:
+            return create_success_response(result.message, result.data, 201)
+        else:
+            return create_bad_request_response(result.message, result.details)
+            
     except Exception as e:
         return create_internal_error_response(str(e))
 

@@ -194,3 +194,51 @@ class GroupService:
         """
         filtered_groups = [group for group in cls._mock_groups if group['category'] == category]
         return [Group(**group_data) for group_data in filtered_groups]
+
+    @classmethod
+    def create_group(cls, create_request, user_id: str) -> ApiResponse:
+        """
+        Create a new group.
+        
+        Args:
+            create_request: The group creation data
+            user_id (str): The ID of the user creating the group
+            
+        Returns:
+            ApiResponse: Success or error response with created group data
+        """
+        try:
+            # Generate a new ID for the group
+            new_id = str(len(cls._mock_groups) + 1)
+            
+            # Create new group data
+            new_group_data = {
+                "id": new_id,
+                "name": create_request.name,
+                "description": create_request.description,
+                "category": create_request.category,
+                "members": 1,  # Creator is the first member
+                "image": create_request.image or "https://images.pexels.com/photos/1181676/pexels-photo-1181676.jpeg?auto=compress&cs=tinysrgb&w=400",
+                "meetingTime": create_request.meeting_time,
+                "location": create_request.location,
+                "contact": create_request.contact,
+                "tags": []
+            }
+            
+            # Add to mock groups list
+            cls._mock_groups.append(new_group_data)
+            
+            # Create Group object for validation
+            new_group = Group(**new_group_data)
+            
+            return ApiResponse(
+                success=True,
+                message="Group created successfully",
+                data=new_group_data
+            )
+            
+        except Exception as e:
+            return ApiResponse(
+                success=False,
+                message=f"Failed to create group: {str(e)}"
+            )

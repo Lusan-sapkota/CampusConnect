@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Upload, X, FileText } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
 import { api } from '../api/api';
+import type { CreatePostRequest } from '../api/types';
 
 interface PostFormData {
   title: string;
@@ -13,7 +13,7 @@ interface PostFormData {
 
 export const AddPostPage: React.FC = () => {
   const navigate = useNavigate();
-  const { state } = useAuth();
+
   const [formData, setFormData] = useState<PostFormData>({
     title: '',
     content: '',
@@ -53,6 +53,8 @@ export const AddPostPage: React.FC = () => {
 
     if (!formData.category) {
       newErrors.category = 'Category is required';
+    } else if (!['academic', 'social', 'announcement', 'general'].includes(formData.category)) {
+      newErrors.category = 'Invalid category. Allowed: academic, social, announcement, general.';
     }
 
     setErrors(newErrors);
@@ -106,12 +108,12 @@ export const AddPostPage: React.FC = () => {
     setIsSubmitting(true);
     
     try {
-      const postData = {
-        title: formData.title,
-        content: formData.content,
-        category: formData.category,
-        author: state.user?.full_name || `${state.user?.first_name} ${state.user?.last_name}` || 'Anonymous',
-        authorEmail: state.user?.email || ''
+      // Sanitize input: strip HTML tags from title and content
+      const stripHtml = (str: string) => str.replace(/<[^>]*>?/gm, '').trim();
+      const postData: CreatePostRequest = {
+        title: stripHtml(formData.title),
+        content: stripHtml(formData.content),
+        category: formData.category as 'academic' | 'social' | 'announcement' | 'general'
       };
 
       const response = await api.posts.create(postData);

@@ -152,7 +152,7 @@ export const AddEventPage: React.FC = () => {
       eventData.append('time', formData.time);
       eventData.append('location', formData.location);
       eventData.append('organizer', formData.organizer);
-      eventData.append('max_attendees', formData.maxAttendees);
+  eventData.append('max_attendees', String(Number(formData.maxAttendees)));
       
       if (formData.image) {
         eventData.append('image', formData.image);

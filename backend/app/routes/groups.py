@@ -81,10 +81,31 @@ def create_group():
         JSON response with created group data or error message
     """
     try:
-        # TODO: Add authentication check
-        # TODO: Implement group creation logic
-        return create_success_response("Group creation not yet implemented", {}, 501)
+        # TODO: Add authentication check to get user_id
+        user_id = request.headers.get('X-User-ID', 'user-1')  # Temporary
         
+        # Handle both JSON and FormData
+        if request.is_json:
+            request_data = request.get_json()
+        else:
+            # Convert FormData to dict
+            request_data = request.form.to_dict()
+        
+        # Validate request data using Pydantic model
+        try:
+            from app.models.data_models import CreateGroupRequest
+            create_request = CreateGroupRequest(**request_data)
+        except ValidationError as e:
+            return create_validation_error_response(e.errors())
+        
+        # Process create request
+        result = GroupService.create_group(create_request, user_id)
+        
+        if result.success:
+            return create_success_response(result.message, result.data, 201)
+        else:
+            return create_bad_request_response(result.message, result.details)
+            
     except Exception as e:
         return create_internal_error_response(str(e))
 
