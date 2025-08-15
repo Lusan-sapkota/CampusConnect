@@ -1,12 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Users, MapPin, Clock, Mail } from 'lucide-react';
 import { Group } from '../data/groups';
+import { useAuthRequired } from '../hooks/useAuthRequired';
+import AuthRequiredModal from './auth/AuthRequiredModal';
 
 interface GroupCardProps {
   group: Group;
 }
 
 const GroupCard: React.FC<GroupCardProps> = ({ group }) => {
+  const { showAuthModal, authAction, requireAuth, closeAuthModal } = useAuthRequired();
+  const [isJoined, setIsJoined] = useState(false);
+
   const getCategoryColor = (category: string) => {
     switch (category) {
       case 'academic':
@@ -24,6 +29,14 @@ const GroupCard: React.FC<GroupCardProps> = ({ group }) => {
       default:
         return 'bg-gray-500';
     }
+  };
+
+  const handleJoinGroup = () => {
+    requireAuth('join this group', () => {
+      setIsJoined(!isJoined);
+      // Here you would typically call your API to join/leave the group
+      console.log(isJoined ? 'Left group:' : 'Joined group:', group.name);
+    });
   };
 
   return (
@@ -78,10 +91,24 @@ const GroupCard: React.FC<GroupCardProps> = ({ group }) => {
           ))}
         </div>
         
-        <button className="w-full bg-primary-500 hover:bg-primary-600 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200">
-          Join Group
+        <button 
+          onClick={handleJoinGroup}
+          className={`w-full font-medium py-2 px-4 rounded-lg transition-colors duration-200 ${
+            isJoined
+              ? 'bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-300'
+              : 'bg-primary-500 hover:bg-primary-600 text-white'
+          }`}
+        >
+          {isJoined ? 'Leave Group' : 'Join Group'}
         </button>
       </div>
+
+      {/* Auth Required Modal */}
+      <AuthRequiredModal
+        isOpen={showAuthModal}
+        onClose={closeAuthModal}
+        action={authAction}
+      />
     </div>
   );
 };

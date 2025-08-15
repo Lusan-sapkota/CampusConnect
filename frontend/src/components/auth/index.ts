@@ -7,3 +7,5 @@ export { ProtectedRoute } from './ProtectedRoute';
 export { UserProfile } from './UserProfile';
 export { ProfilePicture } from './ProfilePicture';
 export { AuthRequiredButton } from './AuthRequiredButton';
+export { default as AuthRequiredModal } from './AuthRequiredModal';
+export { default as CompleteSignupForm } from './CompleteSignupForm';

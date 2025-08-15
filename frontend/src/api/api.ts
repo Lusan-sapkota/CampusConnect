@@ -257,10 +257,43 @@ export const authApi = {
   /**
    * Sign up new user
    */
-  signup: async (data: SignupRequest): Promise<AuthResponse> => {
-    return apiRequest<AuthResponse>('/auth/signup', {
+  signup: async (data: SignupRequest | SimpleSignupRequest): Promise<AuthResponse> => {
+    if ('firstName' in data) {
+      // Complete signup with profile data
+      const formData = new FormData();
+      formData.append('email', data.email);
+      formData.append('password', data.password);
+      formData.append('first_name', data.firstName);
+      formData.append('last_name', data.lastName);
+      if (data.phone) formData.append('phone', data.phone);
+      formData.append('major', data.major);
+      formData.append('year_of_study', data.yearOfStudy);
+      if (data.bio) formData.append('bio', data.bio);
+      if (data.profilePicture) formData.append('profile_picture', data.profilePicture);
+      
+      return apiRequest<AuthResponse>('/auth/complete-signup', {
+        method: 'POST',
+        headers: {
+          // Don't set Content-Type for FormData, let browser set it with boundary
+        },
+        body: formData,
+      });
+    } else {
+      // Simple signup
+      return apiRequest<AuthResponse>('/auth/signup', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+    }
+  },
+
+  /**
+   * Verify signup OTP
+   */
+  verifySignup: async (email: string, otp: string): Promise<AuthResponse> => {
+    return apiRequest<AuthResponse>('/auth/verify-signup', {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify({ email, otp, purpose: 'signup' }),
     });
   },
 

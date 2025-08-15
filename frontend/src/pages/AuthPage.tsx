@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { LoginForm } from '../components/auth/LoginForm';
 import { ForgotPasswordForm } from '../components/auth/ForgotPasswordForm';
 import { SignupForm } from '../components/auth/SignupForm';
+import CompleteSignupForm from '../components/auth/CompleteSignupForm';
 
-type AuthView = 'login' | 'signup' | 'forgot-password';
+type AuthView = 'login' | 'signup' | 'complete-signup' | 'forgot-password';
 
 interface AuthPageProps {
   onAuthSuccess?: () => void;
@@ -17,6 +18,10 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
   };
 
   const handleShowSignup = () => {
+    setCurrentView('complete-signup'); // Use the complete signup form by default
+  };
+
+  const handleShowSimpleSignup = () => {
     setCurrentView('signup');
   };
 
@@ -37,7 +42,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
         </div>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+      <div className={`mt-8 sm:mx-auto sm:w-full ${currentView === 'complete-signup' ? 'sm:max-w-4xl' : 'sm:max-w-md'}`}>
         {currentView === 'login' && (
           <LoginForm
             onSuccess={handleAuthSuccess}
@@ -50,6 +55,13 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
           <SignupForm
             onSuccess={handleBackToLogin}
             onBackToLogin={handleBackToLogin}
+          />
+        )}
+
+        {currentView === 'complete-signup' && (
+          <CompleteSignupForm
+            onSuccess={handleAuthSuccess}
+            onSwitchToLogin={handleBackToLogin}
           />
         )}
 

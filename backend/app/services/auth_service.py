@@ -1,475 +1,575 @@
 """
-Authentication service with OTP-based email verification.
-
-This module provides authentication functionality including user registration,
-login, OTP generation and verification, and integration with the email service.
+Authentication service for user management, signup, login, and profile operations.
 """
 
-import hashlib
+import os
 import secrets
+import string
 from datetime import datetime, timedelta
-from typing import Dict, Any, Optional
-from flask import current_app
-from app.services.email_service import EmailService
-from app.models.data_models import ApiResponse
+from typing import Dict, Any, Optional, Tuple
+from werkzeug.utils import secure_filename
+from PIL import Image
 import logging
 
-# Set up logging
+from app.database import get_db
+from app.models.auth_models import User, UserSession, OTPCode
+from app.services.email_service import EmailService
+
 logger = logging.getLogger(__name__)
 
-
 class AuthService:
-    """Service class for handling authentication operations."""
+    """Service class for authentication operations."""
     
-    # In-memory storage for OTPs (in production, use Redis or database)
-    _otp_storage = {}
-    _user_sessions = {}
+    # Allowed email domains for campus
+    ALLOWED_EMAIL_DOMAINS = [
+        'student.university.edu',
+        'university.edu',
+        'campus.edu',
+        'college.edu',
+        'gmail.com',  # For testing
+        'example.com'  # For testing
+    ]
     
-    @staticmethod
-    def generate_user_id(email: str) -> str:
-        """
-        Generate a unique user ID based on email.
-        
-        Args:
-            email (str): User email address
-            
-        Returns:
-            str: Generated user ID
-        """
-        # Create a hash of the email with a salt for uniqueness
-        salt = current_app.config.get('SECRET_KEY', 'default-salt')
-        user_data = f"{email}{salt}".encode('utf-8')
-        user_id = hashlib.sha256(user_data).hexdigest()[:16]
-        return user_id
+    # Profile picture settings
+    UPLOAD_FOLDER = 'uploads/profile_pictures'
+    ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp'}
+    MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
     
-    @staticmethod
-    def is_valid_email_domain(email: str) -> bool:
-        """
-        Check if email domain is allowed for registration.
-        
-        Args:
-            email (str): Email address to validate
-            
-        Returns:
-            bool: True if domain is allowed, False otherwise
-        """
-        allowed_domains = current_app.config.get('ALLOWED_EMAIL_DOMAINS', ['.edu'])
-        
-        for domain in allowed_domains:
-            if email.lower().endswith(domain.lower()):
-                return True
-        
-        return False
+    @classmethod
+    def _is_allowed_email_domain(cls, email: str) -> bool:
+        """Check if email domain is allowed."""
+        domain = email.split('@')[1].lower()
+        return domain in cls.ALLOWED_EMAIL_DOMAINS
     
-    @staticmethod
-    def store_otp(email: str, otp: str, purpose: str = "authentication") -> Dict[str, Any]:
-        """
-        Store OTP with expiry time for later verification.
-        
-        Args:
-            email (str): User email address
-            otp (str): OTP code
-            purpose (str): Purpose of the OTP
-            
-        Returns:
-            Dict[str, Any]: Storage result
-        """
+    @classmethod
+    def _generate_otp(cls) -> str:
+        """Generate a 6-digit OTP code."""
+        return ''.join(secrets.choice(string.digits) for _ in range(6))
+    
+    @classmethod
+    def _generate_session_token(cls) -> str:
+        """Generate a secure session token."""
+        return secrets.token_urlsafe(32)
+    
+    @classmethod
+    def _allowed_file(cls, filename: str) -> bool:
+        """Check if file extension is allowed."""
+        return '.' in filename and \
+               filename.rsplit('.', 1)[1].lower() in cls.ALLOWED_EXTENSIONS
+    
+    @classmethod
+    def _save_profile_picture(cls, file, user_id: str) -> Tuple[bool, str, Optional[str]]:
+        """Save and process profile picture."""
         try:
-            expiry_minutes = current_app.config.get('OTP_EXPIRY_MINUTES', 10)
-            expiry_time = datetime.utcnow() + timedelta(minutes=expiry_minutes)
+            if not file or not cls._allowed_file(file.filename):
+                return False, "Invalid file type. Only PNG, JPG, JPEG, and WebP are allowed.", None
             
-            # Create storage key
-            storage_key = f"{email}:{purpose}"
+            # Create upload directory if it doesn't exist
+            os.makedirs(cls.UPLOAD_FOLDER, exist_ok=True)
             
-            # Store OTP data
-            AuthService._otp_storage[storage_key] = {
-                'otp': otp,
-                'email': email,
-                'purpose': purpose,
-                'created_at': datetime.utcnow(),
-                'expires_at': expiry_time,
-                'attempts': 0,
-                'max_attempts': 3
-            }
+            # Generate secure filename
+            filename = secure_filename(file.filename)
+            name, ext = os.path.splitext(filename)
+            filename = f"{user_id}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}{ext}"
+            filepath = os.path.join(cls.UPLOAD_FOLDER, filename)
             
-            logger.info(f"OTP stored for {email} with purpose {purpose}")
+            # Save and process image
+            file.save(filepath)
             
-            return {
-                'success': True,
-                'message': 'OTP stored successfully',
-                'expiry_time': expiry_time.isoformat()
-            }
+            # Resize image if needed
+            with Image.open(filepath) as img:
+                # Convert to RGB if necessary
+                if img.mode in ('RGBA', 'LA', 'P'):
+                    img = img.convert('RGB')
+                
+                # Resize to max 400x400 while maintaining aspect ratio
+                img.thumbnail((400, 400), Image.Resampling.LANCZOS)
+                img.save(filepath, optimize=True, quality=85)
+            
+            # Return relative URL for storage
+            return True, "Profile picture uploaded successfully", f"/uploads/profile_pictures/{filename}"
             
         except Exception as e:
-            logger.error(f"Failed to store OTP for {email}: {str(e)}")
-            return {
-                'success': False,
-                'message': 'Failed to store OTP',
-                'error': str(e)
-            }
+            logger.error(f"Error saving profile picture: {str(e)}")
+            return False, "Failed to save profile picture", None
     
-    @staticmethod
-    def verify_otp(email: str, otp: str, purpose: str = "authentication") -> Dict[str, Any]:
+    @classmethod
+    def complete_signup(cls, signup_data: Dict[str, Any], profile_picture=None) -> Dict[str, Any]:
         """
-        Verify OTP for the given email and purpose.
+        Complete user signup with profile information.
         
         Args:
-            email (str): User email address
-            otp (str): OTP code to verify
-            purpose (str): Purpose of the OTP
+            signup_data: Dictionary containing signup information
+            profile_picture: Optional file object for profile picture
             
         Returns:
-            Dict[str, Any]: Verification result
+            Dictionary with success status and user data or error message
         """
         try:
-            storage_key = f"{email}:{purpose}"
-            
-            # Check if OTP exists
-            if storage_key not in AuthService._otp_storage:
-                return {
-                    'success': False,
-                    'message': 'No OTP found for this email and purpose',
-                    'error': 'OTP_NOT_FOUND'
-                }
-            
-            otp_data = AuthService._otp_storage[storage_key]
-            
-            # Check if OTP has expired
-            if datetime.utcnow() > otp_data['expires_at']:
-                # Clean up expired OTP
-                del AuthService._otp_storage[storage_key]
-                return {
-                    'success': False,
-                    'message': 'OTP has expired',
-                    'error': 'OTP_EXPIRED'
-                }
-            
-            # Check attempt limit
-            if otp_data['attempts'] >= otp_data['max_attempts']:
-                # Clean up OTP after max attempts
-                del AuthService._otp_storage[storage_key]
-                return {
-                    'success': False,
-                    'message': 'Maximum OTP verification attempts exceeded',
-                    'error': 'MAX_ATTEMPTS_EXCEEDED'
-                }
-            
-            # Increment attempt counter
-            otp_data['attempts'] += 1
-            
-            # Verify OTP
-            if otp_data['otp'] == otp:
-                # OTP is correct - clean up and return success
-                del AuthService._otp_storage[storage_key]
+            with get_db() as db:
+                # Validate email domain
+                if not cls._is_allowed_email_domain(signup_data['email']):
+                    return {
+                        'success': False,
+                        'message': f"Email must be from an approved campus domain: {', '.join(cls.ALLOWED_EMAIL_DOMAINS)}"
+                    }
                 
-                logger.info(f"OTP verified successfully for {email}")
+                # Check if user already exists
+                existing_user = db.query(User).filter(User.email == signup_data['email'].lower()).first()
+                if existing_user:
+                    return {
+                        'success': False,
+                        'message': 'An account with this email already exists'
+                    }
                 
+                # Create new user
+                user = User(
+                    email=signup_data['email'].lower(),
+                    first_name=signup_data['first_name'].strip(),
+                    last_name=signup_data['last_name'].strip(),
+                    phone=signup_data.get('phone', '').strip() or None,
+                    major=signup_data['major'].strip(),
+                    year_of_study=signup_data['year_of_study'],
+                    bio=signup_data.get('bio', '').strip() or None
+                )
+                
+                # Set password
+                user.set_password(signup_data['password'])
+                
+                # Update full name
+                user.update_full_name()
+                
+                # Add to database to get ID
+                db.add(user)
+                db.flush()  # Get the ID without committing
+                
+                # Handle profile picture if provided
+                if profile_picture:
+                    success, message, picture_url = cls._save_profile_picture(profile_picture, user.id)
+                    if success:
+                        user.profile_picture_url = picture_url
+                        user.profile_picture_filename = picture_url.split('/')[-1]
+                    else:
+                        logger.warning(f"Profile picture upload failed for user {user.id}: {message}")
+                
+                # Generate OTP for email verification
+                otp_code = cls._generate_otp()
+                otp = OTPCode(
+                    user_id=user.id,
+                    code=otp_code,
+                    purpose='signup',
+                    expires_at=datetime.utcnow() + timedelta(minutes=10)
+                )
+                db.add(otp)
+                
+                # Send verification email
+                try:
+                    EmailService.send_otp_email(
+                        email=user.email,
+                        user_name=user.full_name,
+                        otp_code=otp_code,
+                        purpose='signup'
+                    )
+                except Exception as e:
+                    logger.error(f"Failed to send OTP email: {str(e)}")
+                    # Continue with signup even if email fails
+                
+                db.commit()
+                
+                logger.info(f"User created successfully: {user.email}")
                 return {
                     'success': True,
-                    'message': 'OTP verified successfully',
-                    'user_id': AuthService.generate_user_id(email),
-                    'email': email
-                }
-            else:
-                # OTP is incorrect
-                remaining_attempts = otp_data['max_attempts'] - otp_data['attempts']
-                
-                return {
-                    'success': False,
-                    'message': f'Invalid OTP. {remaining_attempts} attempts remaining',
-                    'error': 'INVALID_OTP',
-                    'remaining_attempts': remaining_attempts
+                    'message': 'Account created successfully. Please check your email for verification code.',
+                    'user_id': user.id,
+                    'email': user.email
                 }
                 
         except Exception as e:
-            logger.error(f"Error verifying OTP for {email}: {str(e)}")
+            logger.error(f"Error in complete signup: {str(e)}")
             return {
                 'success': False,
-                'message': 'OTP verification failed',
-                'error': 'VERIFICATION_ERROR',
-                'details': str(e)
+                'message': 'Account creation failed. Please try again.'
             }
     
-    @staticmethod
-    def send_authentication_otp(email: str, user_name: str = None) -> Dict[str, Any]:
+    @classmethod
+    def verify_signup_otp(cls, email: str, otp_code: str) -> Dict[str, Any]:
         """
-        Send authentication OTP to user email.
+        Verify OTP code for signup completion.
         
         Args:
-            email (str): User email address
-            user_name (str, optional): User name for personalization
+            email: User email
+            otp_code: OTP code to verify
             
         Returns:
-            Dict[str, Any]: Result of OTP sending operation
+            Dictionary with verification result
         """
         try:
-            # Validate email domain
-            if not AuthService.is_valid_email_domain(email):
-                allowed_domains = current_app.config.get('ALLOWED_EMAIL_DOMAINS', ['.edu'])
+            with get_db() as db:
+                # Find user
+                user = db.query(User).filter(User.email == email.lower()).first()
+                if not user:
+                    return {
+                        'success': False,
+                        'message': 'User not found'
+                    }
+                
+                # Find valid OTP
+                otp = db.query(OTPCode).filter(
+                    OTPCode.user_id == user.id,
+                    OTPCode.code == otp_code,
+                    OTPCode.purpose == 'signup'
+                ).first()
+                
+                if not otp:
+                    return {
+                        'success': False,
+                        'message': 'Invalid verification code'
+                    }
+                
+                if not otp.is_valid():
+                    return {
+                        'success': False,
+                        'message': 'Verification code has expired or been used'
+                    }
+                
+                # Mark OTP as used
+                otp.mark_as_used()
+                
+                # Verify user account
+                user.is_verified = True
+                user.last_login = datetime.utcnow()
+                
+                # Create session
+                session_token = cls._generate_session_token()
+                session = UserSession(
+                    user_id=user.id,
+                    session_token=session_token,
+                    expires_at=datetime.utcnow() + timedelta(days=30)
+                )
+                db.add(session)
+                
+                db.commit()
+                
+                logger.info(f"User verified and logged in: {user.email}")
                 return {
-                    'success': False,
-                    'message': f'Email domain not allowed. Please use an email from: {", ".join(allowed_domains)}',
-                    'error': 'INVALID_EMAIL_DOMAIN'
+                    'success': True,
+                    'message': 'Account verified successfully',
+                    'user_data': user.to_dict(),
+                    'session_token': session_token
                 }
-            
-            # Extract name from email if not provided
-            if user_name is None:
-                user_name = email.split('@')[0].replace('.', ' ').title()
-            
-            # Generate and send OTP
-            otp_result = EmailService.send_otp_email(
-                to_email=email,
-                recipient_name=user_name,
-                purpose="authentication"
-            )
-            
-            if otp_result['success']:
-                # Store OTP for verification
-                store_result = AuthService.store_otp(
-                    email=email,
-                    otp=otp_result['otp'],
-                    purpose="authentication"
-                )
-                
-                if store_result['success']:
-                    return {
-                        'success': True,
-                        'message': f'Authentication code sent to {email}',
-                        'expiry_minutes': otp_result['expiry_minutes']
-                    }
-                else:
-                    return {
-                        'success': False,
-                        'message': 'Failed to process authentication request',
-                        'error': 'OTP_STORAGE_FAILED'
-                    }
-            else:
-                return otp_result
                 
         except Exception as e:
-            logger.error(f"Error sending authentication OTP to {email}: {str(e)}")
+            logger.error(f"Error verifying signup OTP: {str(e)}")
             return {
                 'success': False,
-                'message': 'Failed to send authentication code',
-                'error': 'AUTH_SERVICE_ERROR',
-                'details': str(e)
+                'message': 'Verification failed. Please try again.'
             }
     
-    @staticmethod
-    def send_password_reset_otp(email: str, user_name: str = None) -> Dict[str, Any]:
-        """
-        Send password reset OTP to user email.
-        
-        Args:
-            email (str): User email address
-            user_name (str, optional): User name for personalization
-            
-        Returns:
-            Dict[str, Any]: Result of OTP sending operation
-        """
-        try:
-            # Extract name from email if not provided
-            if user_name is None:
-                user_name = email.split('@')[0].replace('.', ' ').title()
-            
-            # Generate and send OTP
-            otp_result = EmailService.send_otp_email(
-                to_email=email,
-                recipient_name=user_name,
-                purpose="password reset"
-            )
-            
-            if otp_result['success']:
-                # Store OTP for verification
-                store_result = AuthService.store_otp(
-                    email=email,
-                    otp=otp_result['otp'],
-                    purpose="password_reset"
-                )
-                
-                if store_result['success']:
-                    return {
-                        'success': True,
-                        'message': f'Password reset code sent to {email}',
-                        'expiry_minutes': otp_result['expiry_minutes']
-                    }
-                else:
-                    return {
-                        'success': False,
-                        'message': 'Failed to process password reset request',
-                        'error': 'OTP_STORAGE_FAILED'
-                    }
-            else:
-                return otp_result
-                
-        except Exception as e:
-            logger.error(f"Error sending password reset OTP to {email}: {str(e)}")
-            return {
-                'success': False,
-                'message': 'Failed to send password reset code',
-                'error': 'AUTH_SERVICE_ERROR',
-                'details': str(e)
-            }
-    
-    @staticmethod
-    def authenticate_user(email: str, otp: str) -> Dict[str, Any]:
+    @classmethod
+    def authenticate_user(cls, email: str, otp: str) -> Dict[str, Any]:
         """
         Authenticate user with email and OTP.
         
         Args:
-            email (str): User email address
-            otp (str): OTP code
+            email: User email
+            otp: OTP code
             
         Returns:
-            Dict[str, Any]: Authentication result
+            Dictionary with authentication result
         """
         try:
-            # Verify OTP
-            verification_result = AuthService.verify_otp(email, otp, "authentication")
-            
-            if verification_result['success']:
-                # Generate session token (in production, use JWT)
-                session_token = secrets.token_urlsafe(32)
-                user_id = verification_result['user_id']
+            with get_db() as db:
+                # Find user
+                user = db.query(User).filter(User.email == email.lower()).first()
+                if not user:
+                    return {
+                        'success': False,
+                        'message': 'Invalid email or OTP'
+                    }
                 
-                # Store session
-                AuthService._user_sessions[session_token] = {
-                    'user_id': user_id,
-                    'email': email,
-                    'created_at': datetime.utcnow(),
-                    'expires_at': datetime.utcnow() + timedelta(hours=24)
-                }
+                if not user.is_active:
+                    return {
+                        'success': False,
+                        'message': 'Account is deactivated'
+                    }
                 
-                logger.info(f"User authenticated successfully: {email}")
+                # Find valid OTP
+                otp_record = db.query(OTPCode).filter(
+                    OTPCode.user_id == user.id,
+                    OTPCode.code == otp,
+                    OTPCode.purpose == 'login'
+                ).first()
                 
+                if not otp_record:
+                    return {
+                        'success': False,
+                        'message': 'Invalid email or OTP'
+                    }
+                
+                if not otp_record.is_valid():
+                    return {
+                        'success': False,
+                        'message': 'OTP has expired or been used'
+                    }
+                
+                # Mark OTP as used
+                otp_record.mark_as_used()
+                
+                # Update last login
+                user.last_login = datetime.utcnow()
+                
+                # Create session
+                session_token = cls._generate_session_token()
+                session = UserSession(
+                    user_id=user.id,
+                    session_token=session_token,
+                    expires_at=datetime.utcnow() + timedelta(days=30)
+                )
+                db.add(session)
+                
+                db.commit()
+                
+                logger.info(f"User authenticated successfully: {user.email}")
                 return {
                     'success': True,
                     'message': 'Authentication successful',
-                    'user_id': user_id,
-                    'email': email,
+                    'user_data': user.to_dict(),
                     'session_token': session_token
                 }
-            else:
-                return verification_result
                 
         except Exception as e:
-            logger.error(f"Error authenticating user {email}: {str(e)}")
+            logger.error(f"Error authenticating user: {str(e)}")
             return {
                 'success': False,
-                'message': 'Authentication failed',
-                'error': 'AUTH_ERROR',
-                'details': str(e)
+                'message': 'Authentication failed'
             }
     
-    @staticmethod
-    def verify_session(session_token: str) -> Dict[str, Any]:
+    @classmethod
+    def verify_session(cls, session_token: str) -> Dict[str, Any]:
         """
-        Verify user session token.
+        Verify session token and return user data.
         
         Args:
-            session_token (str): Session token to verify
+            session_token: Session token to verify
             
         Returns:
-            Dict[str, Any]: Session verification result
+            Dictionary with verification result and user data
         """
         try:
-            if session_token not in AuthService._user_sessions:
+            with get_db() as db:
+                # Find session
+                session = db.query(UserSession).filter(
+                    UserSession.session_token == session_token,
+                    UserSession.is_active == True
+                ).first()
+                
+                if not session:
+                    return {
+                        'valid': False,
+                        'message': 'Invalid session token'
+                    }
+                
+                if session.is_expired():
+                    session.is_active = False
+                    db.commit()
+                    return {
+                        'valid': False,
+                        'message': 'Session expired'
+                    }
+                
+                # Update last used
+                session.last_used = datetime.utcnow()
+                db.commit()
+                
                 return {
-                    'valid': False,
-                    'message': 'Invalid session token',
-                    'error': 'INVALID_SESSION'
+                    'valid': True,
+                    'user_data': session.user.to_dict()
                 }
-            
-            session_data = AuthService._user_sessions[session_token]
-            
-            # Check if session has expired
-            if datetime.utcnow() > session_data['expires_at']:
-                # Clean up expired session
-                del AuthService._user_sessions[session_token]
-                return {
-                    'valid': False,
-                    'message': 'Session has expired',
-                    'error': 'SESSION_EXPIRED'
-                }
-            
-            return {
-                'valid': True,
-                'message': 'Session is valid',
-                'user_id': session_data['user_id'],
-                'email': session_data['email']
-            }
-            
+                
         except Exception as e:
             logger.error(f"Error verifying session: {str(e)}")
             return {
                 'valid': False,
-                'message': 'Session verification failed',
-                'error': 'SESSION_ERROR',
-                'details': str(e)
+                'message': 'Session verification failed'
             }
     
-    @staticmethod
-    def logout_user(session_token: str) -> Dict[str, Any]:
+    @classmethod
+    def update_profile(cls, user_id: str, profile_data: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Logout user by invalidating session token.
+        Update user profile information.
         
         Args:
-            session_token (str): Session token to invalidate
+            user_id: User ID
+            profile_data: Dictionary containing profile updates
             
         Returns:
-            Dict[str, Any]: Logout result
+            Dictionary with update result
         """
         try:
-            if session_token in AuthService._user_sessions:
-                del AuthService._user_sessions[session_token]
+            with get_db() as db:
+                user = db.query(User).filter(User.id == user_id).first()
+                if not user:
+                    return {
+                        'success': False,
+                        'message': 'User not found'
+                    }
+                
+                # Update allowed fields
+                if 'first_name' in profile_data:
+                    user.first_name = profile_data['first_name'].strip()
+                if 'last_name' in profile_data:
+                    user.last_name = profile_data['last_name'].strip()
+                if 'bio' in profile_data:
+                    user.bio = profile_data['bio'].strip() or None
+                if 'phone' in profile_data:
+                    user.phone = profile_data['phone'].strip() or None
+                if 'major' in profile_data:
+                    user.major = profile_data['major'].strip()
+                if 'year_of_study' in profile_data:
+                    user.year_of_study = profile_data['year_of_study']
+                
+                # Update full name if first or last name changed
+                if 'first_name' in profile_data or 'last_name' in profile_data:
+                    user.update_full_name()
+                
+                user.updated_at = datetime.utcnow()
+                db.commit()
+                
+                logger.info(f"Profile updated for user: {user.email}")
                 return {
                     'success': True,
-                    'message': 'Logged out successfully'
-                }
-            else:
-                return {
-                    'success': False,
-                    'message': 'Invalid session token',
-                    'error': 'INVALID_SESSION'
+                    'message': 'Profile updated successfully',
+                    'user_data': user.to_dict()
                 }
                 
         except Exception as e:
-            logger.error(f"Error during logout: {str(e)}")
+            logger.error(f"Error updating profile: {str(e)}")
             return {
                 'success': False,
-                'message': 'Logout failed',
-                'error': 'LOGOUT_ERROR',
-                'details': str(e)
+                'message': 'Profile update failed'
             }
     
-    @staticmethod
-    def cleanup_expired_data():
+    @classmethod
+    def upload_profile_picture(cls, user_id: str, file) -> Dict[str, Any]:
         """
-        Clean up expired OTPs and sessions.
-        This should be called periodically (e.g., via a background task).
+        Upload and update user profile picture.
+        
+        Args:
+            user_id: User ID
+            file: File object
+            
+        Returns:
+            Dictionary with upload result
         """
         try:
-            current_time = datetime.utcnow()
-            
-            # Clean up expired OTPs
-            expired_otps = [
-                key for key, data in AuthService._otp_storage.items()
-                if current_time > data['expires_at']
-            ]
-            
-            for key in expired_otps:
-                del AuthService._otp_storage[key]
-            
-            # Clean up expired sessions
-            expired_sessions = [
-                token for token, data in AuthService._user_sessions.items()
-                if current_time > data['expires_at']
-            ]
-            
-            for token in expired_sessions:
-                del AuthService._user_sessions[token]
-            
-            logger.info(f"Cleaned up {len(expired_otps)} expired OTPs and {len(expired_sessions)} expired sessions")
-            
+            with get_db() as db:
+                user = db.query(User).filter(User.id == user_id).first()
+                if not user:
+                    return {
+                        'success': False,
+                        'message': 'User not found'
+                    }
+                
+                # Delete old profile picture if exists
+                if user.profile_picture_filename:
+                    old_path = os.path.join(cls.UPLOAD_FOLDER, user.profile_picture_filename)
+                    if os.path.exists(old_path):
+                        try:
+                            os.remove(old_path)
+                        except Exception as e:
+                            logger.warning(f"Failed to delete old profile picture: {str(e)}")
+                
+                # Save new profile picture
+                success, message, picture_url = cls._save_profile_picture(file, user_id)
+                if not success:
+                    return {
+                        'success': False,
+                        'message': message
+                    }
+                
+                # Update user record
+                user.profile_picture_url = picture_url
+                user.profile_picture_filename = picture_url.split('/')[-1]
+                user.updated_at = datetime.utcnow()
+                db.commit()
+                
+                logger.info(f"Profile picture updated for user: {user.email}")
+                return {
+                    'success': True,
+                    'message': 'Profile picture updated successfully',
+                    'profile_picture_url': picture_url
+                }
+                
         except Exception as e:
-            logger.error(f"Error during cleanup: {str(e)}")
+            logger.error(f"Error uploading profile picture: {str(e)}")
+            return {
+                'success': False,
+                'message': 'Profile picture upload failed'
+            }
+    
+    @classmethod
+    def send_login_otp(cls, email: str) -> Dict[str, Any]:
+        """
+        Send OTP for login.
+        
+        Args:
+            email: User email
+            
+        Returns:
+            Dictionary with send result
+        """
+        try:
+            with get_db() as db:
+                # Find user
+                user = db.query(User).filter(User.email == email.lower()).first()
+                if not user:
+                    return {
+                        'success': False,
+                        'message': 'No account found with this email'
+                    }
+                
+                if not user.is_active:
+                    return {
+                        'success': False,
+                        'message': 'Account is deactivated'
+                    }
+                
+                # Generate OTP
+                otp_code = cls._generate_otp()
+                otp = OTPCode(
+                    user_id=user.id,
+                    code=otp_code,
+                    purpose='login',
+                    expires_at=datetime.utcnow() + timedelta(minutes=10)
+                )
+                db.add(otp)
+                
+                # Send OTP email
+                try:
+                    EmailService.send_otp_email(
+                        email=user.email,
+                        user_name=user.full_name,
+                        otp_code=otp_code,
+                        purpose='login'
+                    )
+                except Exception as e:
+                    logger.error(f"Failed to send OTP email: {str(e)}")
+                    return {
+                        'success': False,
+                        'message': 'Failed to send verification code'
+                    }
+                
+                db.commit()
+                
+                logger.info(f"Login OTP sent to: {user.email}")
+                return {
+                    'success': True,
+                    'message': 'Verification code sent to your email'
+                }
+                
+        except Exception as e:
+            logger.error(f"Error sending login OTP: {str(e)}")
+            return {
+                'success': False,
+                'message': 'Failed to send verification code'
+            }

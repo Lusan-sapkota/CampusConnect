@@ -61,6 +61,18 @@ export interface ChangePasswordRequest {
 
 export interface SignupRequest {
   email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  phone?: string;
+  major: string;
+  yearOfStudy: string;
+  bio?: string;
+  profilePicture?: File | null;
+}
+
+export interface SimpleSignupRequest {
+  email: string;
   full_name: string;
   password: string;
   confirm_password: string;
@@ -83,11 +95,14 @@ export interface AuthUser {
   user_id: string;
   email: string;
   session_token: string;
+  first_name?: string;
+  last_name?: string;
   full_name?: string;
   bio?: string;
   phone?: string;
   year_of_study?: string;
   major?: string;
+  profile_picture?: string;
   profile_picture_url?: string;
   created_at?: string;
 }

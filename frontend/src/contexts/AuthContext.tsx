@@ -21,6 +21,7 @@ type AuthAction =
 interface AuthContextType {
   state: AuthState;
   login: (email: string, otp: string) => Promise<boolean>;
+  completeSignup: (signupData: any, otp?: string) => Promise<boolean>;
   logout: () => Promise<void>;
   clearError: () => void;
   checkAuthStatus: () => Promise<void>;
@@ -145,6 +146,46 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const completeSignup = async (signupData: any, otp?: string): Promise<boolean> => {
+    dispatch({ type: 'AUTH_START' });
+    
+    try {
+      if (otp) {
+        // Verify OTP for complete signup
+        const response = await authApi.verifySignup(signupData.email, otp);
+        
+        if (response.success && response.data) {
+          // Store token in localStorage
+          localStorage.setItem('auth_token', response.data.session_token);
+          dispatch({ type: 'AUTH_SUCCESS', payload: response.data });
+          return true;
+        } else {
+          dispatch({ type: 'AUTH_ERROR', payload: response.message || 'Verification failed' });
+          return false;
+        }
+      } else {
+        // Initial signup - just send data
+        const response = await authApi.signup(signupData);
+        
+        if (response.success) {
+          // Don't log in yet, wait for OTP verification
+          dispatch({ type: 'CLEAR_ERROR' });
+          return true;
+        } else {
+          dispatch({ type: 'AUTH_ERROR', payload: response.message || 'Signup failed' });
+          return false;
+        }
+      }
+    } catch (error) {
+      if (error instanceof ApiError) {
+        dispatch({ type: 'AUTH_ERROR', payload: error.message });
+      } else {
+        dispatch({ type: 'AUTH_ERROR', payload: 'Signup failed' });
+      }
+      return false;
+    }
+  };
+
   const logout = async () => {
     try {
       await authApi.logout();
@@ -163,6 +204,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const value: AuthContextType = {
     state,
     login,
+    completeSignup,
     logout,
     clearError,
     checkAuthStatus,

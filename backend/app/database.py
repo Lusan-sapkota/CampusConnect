@@ -12,7 +12,14 @@ from contextlib import contextmanager
 from typing import Generator
 import logging
 
-from app.models.auth_models import Base
+try:
+    from app.models.auth_models import Base
+except ImportError:
+    # Handle direct execution from app directory
+    import sys
+    import os
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from app.models.auth_models import Base
 
 # Global variables for database components
 engine = None
@@ -67,7 +74,10 @@ def create_tables() -> None:
     
     try:
         # Import all models to ensure they're registered with Base
-        from app.models.auth_models import User
+        try:
+            from app.models.auth_models import User
+        except ImportError:
+            from models.auth_models import User
         
         # Create all tables
         Base.metadata.create_all(bind=engine)
@@ -192,3 +202,17 @@ def get_db_dependency() -> Generator[Session, None, None]:
     """
     with get_db() as db:
         yield db
+
+# Quick SQLite generator main block
+if __name__ == "__main__":
+    try:
+        try:
+            from app.config import Config
+        except ImportError:
+            from config import Config
+        print(f"Initializing database at: {Config.SQLALCHEMY_DATABASE_URI}")
+        init_database(Config.SQLALCHEMY_DATABASE_URI)
+        create_tables()
+        print("SQLite database and tables created successfully!")
+    except Exception as e:
+        print(f"Error creating database: {e}")

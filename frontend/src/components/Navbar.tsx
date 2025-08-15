@@ -1,12 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Home, Users, Calendar, LogIn, UserPlus, LogOut, Menu, X, User } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import ThemeToggle from './ThemeToggle';
+import Avatar from './Avatar';
 
 const Navbar: React.FC = () => {
   const location = useLocation();
-  const navigate = useNavigate();
   const { state, logout } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -90,7 +90,8 @@ const Navbar: React.FC = () => {
     const user = state.user;
     if (!user) return null;
     
-    const userName = user.email.split('@')[0].replace('.', ' ').replace(/\b\w/g, l => l.toUpperCase());
+    const userName = `${user.first_name || ''} ${user.last_name || ''}`.trim() || 
+                     user.email.split('@')[0].replace('.', ' ').replace(/\b\w/g, l => l.toUpperCase());
     
     return (
       <div className="relative" ref={userMenuRef}>
@@ -98,10 +99,10 @@ const Navbar: React.FC = () => {
           onClick={() => setShowUserMenu(!showUserMenu)}
           className="flex items-center space-x-2 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200"
         >
-          <img
-            src={`https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=6366f1&color=fff`}
-            alt={userName}
-            className="w-7 h-7 rounded-full"
+          <Avatar
+            src={user.profile_picture}
+            name={userName}
+            size="sm"
           />
           <span className="text-sm font-medium text-gray-700 dark:text-gray-300 hidden md:block">{userName}</span>
         </button>
@@ -202,14 +203,17 @@ const Navbar: React.FC = () => {
               {state.user ? (
                 <div className="border-t border-gray-200 dark:border-gray-700 pt-3 mt-3">
                   <div className="flex items-center px-3 py-2 mb-2">
-                    <img
-                      src={`https://ui-avatars.com/api/?name=${encodeURIComponent(state.user.email.split('@')[0])}&background=6366f1&color=fff`}
-                      alt={state.user.email}
-                      className="w-7 h-7 rounded-full mr-3"
+                    <Avatar
+                      src={state.user.profile_picture}
+                      name={`${state.user.first_name || ''} ${state.user.last_name || ''}`.trim() || 
+                            state.user.email.split('@')[0].replace('.', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                      size="sm"
+                      className="mr-3"
                     />
                     <div>
                       <p className="text-sm font-medium text-gray-900 dark:text-white">
-                        {state.user.email.split('@')[0].replace('.', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                        {`${state.user.first_name || ''} ${state.user.last_name || ''}`.trim() || 
+                         state.user.email.split('@')[0].replace('.', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                       </p>
                       <p className="text-xs text-gray-500 dark:text-gray-400">{state.user.email}</p>
                     </div>

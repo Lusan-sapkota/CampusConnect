@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { authApi, ApiError, SignupRequest } from '../api';
+import { authApi, ApiError, SignupRequest, SimpleSignupRequest } from '../api';
 
 interface SignupState {
   isLoading: boolean;
@@ -11,7 +11,8 @@ interface SignupState {
 
 interface UseSignupReturn {
   state: SignupState;
-  signup: (data: SignupRequest) => Promise<boolean>;
+  signup: (data: SignupRequest | SimpleSignupRequest) => Promise<boolean>;
+  verifyOTP: (email: string, otp: string) => Promise<boolean>;
   clearError: () => void;
   reset: () => void;
   goToStep: (step: SignupState['currentStep']) => void;
@@ -66,7 +67,7 @@ export const useSignup = (): UseSignupReturn => {
     return errors;
   };
 
-  const signup = useCallback(async (data: SignupRequest): Promise<boolean> => {
+  const signup = useCallback(async (data: SignupRequest | SimpleSignupRequest): Promise<boolean> => {
     setState(prev => ({ ...prev, isLoading: true, error: null, email: data.email }));
     
     // Validate email domain
@@ -90,30 +91,80 @@ export const useSignup = (): UseSignupReturn => {
       return false;
     }
 
-    // Validate password confirmation
-    if (data.password !== data.confirm_password) {
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        error: 'Passwords do not match',
-      }));
-      return false;
-    }
+    // Handle different signup request types
+    if ('confirm_password' in data) {
+      // Simple signup request validation
+      if (data.password !== data.confirm_password) {
+        setState(prev => ({
+          ...prev,
+          isLoading: false,
+          error: 'Passwords do not match',
+        }));
+        return false;
+      }
 
-    // Validate terms acceptance
-    if (!data.terms_accepted) {
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        error: 'You must accept the terms and conditions',
-      }));
-      return false;
+      if (!data.terms_accepted) {
+        setState(prev => ({
+          ...prev,
+          isLoading: false,
+          error: 'You must accept the terms and conditions',
+        }));
+        return false;
+      }
     }
 
     try {
-      const response = await authApi.signup(data);
+      // For now, simulate sending OTP for complete signup
+      if ('firstName' in data) {
+        // Complete signup - simulate OTP sending
+        setState(prev => ({
+          ...prev,
+          isLoading: false,
+          currentStep: 'otp',
+        }));
+        return true;
+      } else {
+        // Simple signup - use existing API
+        const response = await authApi.signup(data as SimpleSignupRequest);
+        
+        if (response.success) {
+          setState(prev => ({
+            ...prev,
+            isLoading: false,
+            isSignupComplete: true,
+            currentStep: 'success',
+          }));
+          return true;
+        } else {
+          setState(prev => ({
+            ...prev,
+            isLoading: false,
+            error: response.message || 'Signup failed',
+          }));
+          return false;
+        }
+      }
+    } catch (error) {
+      const errorMessage = error instanceof ApiError 
+        ? error.message 
+        : 'Signup failed';
       
-      if (response.success) {
+      setState(prev => ({
+        ...prev,
+        isLoading: false,
+        error: errorMessage,
+      }));
+      return false;
+    }
+  }, []);
+
+  const verifyOTP = useCallback(async (email: string, otp: string): Promise<boolean> => {
+    setState(prev => ({ ...prev, isLoading: true, error: null }));
+    
+    try {
+      // For now, simulate OTP verification
+      // In a real app, this would call the API
+      if (otp === '123456' || otp.length === 6) {
         setState(prev => ({
           ...prev,
           isLoading: false,
@@ -125,14 +176,14 @@ export const useSignup = (): UseSignupReturn => {
         setState(prev => ({
           ...prev,
           isLoading: false,
-          error: response.message || 'Signup failed',
+          error: 'Invalid OTP code',
         }));
         return false;
       }
     } catch (error) {
       const errorMessage = error instanceof ApiError 
         ? error.message 
-        : 'Signup failed';
+        : 'OTP verification failed';
       
       setState(prev => ({
         ...prev,
@@ -164,6 +215,7 @@ export const useSignup = (): UseSignupReturn => {
   return {
     state,
     signup,
+    verifyOTP,
     clearError,
     reset,
     goToStep,

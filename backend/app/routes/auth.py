@@ -81,6 +81,20 @@ class SignupRequest(BaseModel):
     class Config:
         populate_by_name = True
 
+class CompleteSignupRequest(BaseModel):
+    """Request schema for complete user signup with profile information."""
+    email: EmailStr
+    password: str = Field(..., min_length=8, max_length=128)
+    first_name: str = Field(..., min_length=1, max_length=100)
+    last_name: str = Field(..., min_length=1, max_length=100)
+    phone: Optional[str] = Field(None, max_length=20)
+    major: str = Field(..., min_length=1, max_length=100)
+    year_of_study: str = Field(..., min_length=1, max_length=20)
+    bio: Optional[str] = Field(None, max_length=500)
+    
+    class Config:
+        populate_by_name = True
+
 
 class UpdateProfileRequest(BaseModel):
     """Request schema for updating user profile."""
@@ -449,6 +463,104 @@ def signup():
             'email': signup_request.email,
             'full_name': signup_request.full_name
         })
+        
+    except Exception as e:
+        return create_internal_error_response(str(e))
+
+
+@auth_bp.route('/auth/complete-signup', methods=['POST'])
+def complete_signup():
+    """
+    Register a new user with complete profile information.
+    
+    Returns:
+        JSON response with registration result
+    """
+    try:
+        # Handle multipart form data for profile picture
+        profile_picture = None
+        if 'profile_picture' in request.files:
+            profile_picture = request.files['profile_picture']
+            if profile_picture.filename == '':
+                profile_picture = None
+        
+        # Get form data
+        form_data = request.form.to_dict()
+        
+        # Validate request data
+        try:
+            signup_request = CompleteSignupRequest(**form_data)
+        except ValidationError as e:
+            return create_validation_error_response(e.errors())
+        
+        # Prepare signup data
+        signup_data = {
+            'email': signup_request.email,
+            'password': signup_request.password,
+            'first_name': signup_request.first_name,
+            'last_name': signup_request.last_name,
+            'phone': signup_request.phone,
+            'major': signup_request.major,
+            'year_of_study': signup_request.year_of_study,
+            'bio': signup_request.bio
+        }
+        
+        # Complete signup with profile picture
+        result = AuthService.complete_signup(signup_data, profile_picture)
+        
+        if result['success']:
+            return create_success_response(result['message'], {
+                'user_id': result['user_id'],
+                'email': result['email']
+            })
+        else:
+            return create_bad_request_response(result['message'])
+        
+    except Exception as e:
+        return create_internal_error_response(str(e))
+
+
+@auth_bp.route('/auth/verify-signup', methods=['POST'])
+def verify_signup():
+    """
+    Verify signup OTP and complete account activation.
+    
+    Returns:
+        JSON response with verification result and session token
+    """
+    try:
+        # Validate request format
+        validation_error = handle_request_validation(request, required_json=True)
+        if validation_error:
+            return validation_error
+        
+        request_data = request.get_json()
+        
+        # Validate request data
+        try:
+            verify_request = VerifyOTPRequest(**request_data)
+        except ValidationError as e:
+            return create_validation_error_response(e.errors())
+        
+        # Verify OTP
+        result = AuthService.verify_signup_otp(
+            email=verify_request.email,
+            otp_code=verify_request.otp
+        )
+        
+        if result['success']:
+            response_data = {
+                'user_id': result['user_data']['user_id'],
+                'email': result['user_data']['email'],
+                'first_name': result['user_data']['first_name'],
+                'last_name': result['user_data']['last_name'],
+                'full_name': result['user_data']['full_name'],
+                'profile_picture': result['user_data']['profile_picture'],
+                'session_token': result['session_token']
+            }
+            return create_success_response(result['message'], response_data)
+        else:
+            return create_bad_request_response(result['message'])
         
     except Exception as e:
         return create_internal_error_response(str(e))

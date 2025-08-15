@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import lenisManager from '../utils/lenis';
 import { useParams, Link } from 'react-router-dom';
 import { Calendar, Clock, MapPin, Users, ArrowLeft, Share2, Heart } from 'lucide-react';
 import { events } from '../data/events';
+import { useAuthRequired } from '../hooks/useAuthRequired';
+import AuthRequiredModal from '../components/auth/AuthRequiredModal';
 
 const EventDetailsPage: React.FC = () => {
   React.useEffect(() => {
@@ -10,6 +12,9 @@ const EventDetailsPage: React.FC = () => {
   }, []);
   const { id } = useParams<{ id: string }>();
   const event = events.find((e) => e.id === id);
+  const { showAuthModal, authAction, requireAuth, closeAuthModal } = useAuthRequired();
+  const [isJoined, setIsJoined] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
 
   if (!event) {
     return (
@@ -54,6 +59,36 @@ const EventDetailsPage: React.FC = () => {
       month: 'long', 
       day: 'numeric' 
     });
+  };
+
+  const handleJoinEvent = () => {
+    requireAuth('join this event', () => {
+      setIsJoined(!isJoined);
+      console.log(isJoined ? 'Left event:' : 'Joined event:', event?.title);
+    });
+  };
+
+  const handleSaveEvent = () => {
+    requireAuth('save this event', () => {
+      setIsSaved(!isSaved);
+      console.log(isSaved ? 'Unsaved event:' : 'Saved event:', event?.title);
+    });
+  };
+
+  const handleShareEvent = () => {
+    // Share functionality doesn't require auth
+    if (navigator.share) {
+      navigator.share({
+        title: event?.title,
+        text: event?.description,
+        url: window.location.href,
+      });
+    } else {
+      // Fallback: copy to clipboard
+      navigator.clipboard.writeText(window.location.href);
+      // You could show a toast notification here
+      console.log('Event link copied to clipboard');
+    }
   };
 
   return (
@@ -182,16 +217,33 @@ const EventDetailsPage: React.FC = () => {
 
             {/* Action Buttons */}
             <div className="space-y-3">
-              <button className="w-full bg-primary-500 hover:bg-primary-600 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 text-sm sm:text-base">
-                Join Event
+              <button 
+                onClick={handleJoinEvent}
+                className={`w-full font-medium py-3 px-4 rounded-lg transition-colors duration-200 text-sm sm:text-base ${
+                  isJoined
+                    ? 'bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-300'
+                    : 'bg-primary-500 hover:bg-primary-600 text-white'
+                }`}
+              >
+                {isJoined ? 'Leave Event' : 'Join Event'}
               </button>
               
               <div className="flex space-x-3">
-                <button className="flex-1 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-medium py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center text-sm sm:text-base">
-                  <Heart className="w-4 h-4 mr-2" />
-                  Save
+                <button 
+                  onClick={handleSaveEvent}
+                  className={`flex-1 font-medium py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center text-sm sm:text-base ${
+                    isSaved
+                      ? 'bg-red-100 hover:bg-red-200 dark:bg-red-900 dark:hover:bg-red-800 text-red-700 dark:text-red-300'
+                      : 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300'
+                  }`}
+                >
+                  <Heart className={`w-4 h-4 mr-2 ${isSaved ? 'fill-current' : ''}`} />
+                  {isSaved ? 'Saved' : 'Save'}
                 </button>
-                <button className="flex-1 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-medium py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center text-sm sm:text-base">
+                <button 
+                  onClick={handleShareEvent}
+                  className="flex-1 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-medium py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center text-sm sm:text-base"
+                >
                   <Share2 className="w-4 h-4 mr-2" />
                   Share
                 </button>
@@ -213,6 +265,13 @@ const EventDetailsPage: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Auth Required Modal */}
+        <AuthRequiredModal
+          isOpen={showAuthModal}
+          onClose={closeAuthModal}
+          action={authAction}
+        />
       </div>
     </div>
   );
