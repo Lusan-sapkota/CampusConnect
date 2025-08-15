@@ -4,8 +4,12 @@ import EventCard from '../components/EventCard';
 import ViewAllModal from '../components/ViewAllModal';
 import { posts } from '../data/posts';
 import { events } from '../data/events';
+import lenisManager from '../utils/lenis';
 
 const HomePage: React.FC = () => {
+  React.useEffect(() => {
+    lenisManager.getInstance()?.scrollTo(0);
+  }, []);
   const upcomingEvents = events.slice(0, 3);
   const [modalState, setModalState] = useState<{
     isOpen: boolean;

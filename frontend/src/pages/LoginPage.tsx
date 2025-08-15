@@ -1,9 +1,13 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock, AlertCircle } from 'lucide-react';
+import lenisManager from '../utils/lenis';
 import { useAuth } from '../contexts/AuthContext';
 
 const LoginPage: React.FC = () => {
+  React.useEffect(() => {
+    lenisManager.getInstance()?.scrollTo(0);
+  }, []);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);

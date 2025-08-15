@@ -1,9 +1,13 @@
 import React from 'react';
+import lenisManager from '../utils/lenis';
 import { useParams, Link } from 'react-router-dom';
 import { Calendar, Clock, MapPin, Users, ArrowLeft, Share2, Heart } from 'lucide-react';
 import { events } from '../data/events';
 
 const EventDetailsPage: React.FC = () => {
+  React.useEffect(() => {
+    lenisManager.getInstance()?.scrollTo(0);
+  }, []);
   const { id } = useParams<{ id: string }>();
   const event = events.find((e) => e.id === id);
 

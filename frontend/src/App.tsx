@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider } from './contexts/AuthContext';
@@ -10,8 +10,17 @@ import EventDetailsPage from './pages/EventDetailsPage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import ProtectedRoute from './components/ProtectedRoute';
+import lenisManager from './utils/lenis';
 
 function App() {
+  // Initialize Lenis for smooth scrolling
+  useEffect(() => {
+    lenisManager.init();
+    return () => {
+      lenisManager.destroy();
+    };
+  }, []);
+
   return (
     <ThemeProvider>
       <AuthProvider>
