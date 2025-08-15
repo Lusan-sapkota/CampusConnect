@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Upload, X, Users } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { api } from '../api/api';
 
 interface GroupFormData {
   name: string;
@@ -120,7 +121,6 @@ export const AddGroupPage: React.FC = () => {
     setIsSubmitting(true);
     
     try {
-      // TODO: Implement API call to create group
       const groupData = new FormData();
       groupData.append('name', formData.name);
       groupData.append('description', formData.description);
@@ -133,10 +133,13 @@ export const AddGroupPage: React.FC = () => {
         groupData.append('image', formData.image);
       }
 
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const response = await api.groups.create(groupData);
       
-      navigate('/groups');
+      if (response.success) {
+        navigate('/groups');
+      } else {
+        setErrors({ submit: response.message || 'Failed to create group' });
+      }
     } catch (error: any) {
       setErrors({ submit: error.message || 'Failed to create group' });
     } finally {

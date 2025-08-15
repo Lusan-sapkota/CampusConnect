@@ -72,6 +72,63 @@ def get_group(group_id):
         return create_internal_error_response(str(e))
 
 
+@groups_bp.route('/groups', methods=['POST'])
+def create_group():
+    """
+    Create a new group.
+    
+    Returns:
+        JSON response with created group data or error message
+    """
+    try:
+        # TODO: Add authentication check
+        # TODO: Implement group creation logic
+        return create_success_response("Group creation not yet implemented", {}, 501)
+        
+    except Exception as e:
+        return create_internal_error_response(str(e))
+
+
+@groups_bp.route('/groups/<group_id>', methods=['PUT'])
+def update_group(group_id):
+    """
+    Update an existing group.
+    
+    Args:
+        group_id (str): The unique identifier of the group to update
+        
+    Returns:
+        JSON response with updated group data or error message
+    """
+    try:
+        # TODO: Add authentication check
+        # TODO: Implement group update logic
+        return create_success_response("Group update not yet implemented", {}, 501)
+        
+    except Exception as e:
+        return create_internal_error_response(str(e))
+
+
+@groups_bp.route('/groups/<group_id>', methods=['DELETE'])
+def delete_group(group_id):
+    """
+    Delete a group.
+    
+    Args:
+        group_id (str): The unique identifier of the group to delete
+        
+    Returns:
+        JSON response with success message or error
+    """
+    try:
+        # TODO: Add authentication check
+        # TODO: Implement group deletion logic
+        return create_success_response("Group deletion not yet implemented", {}, 501)
+        
+    except Exception as e:
+        return create_internal_error_response(str(e))
+
+
 @groups_bp.route('/groups/<group_id>/join', methods=['POST'])
 def join_group(group_id):
     """
@@ -105,6 +162,26 @@ def join_group(group_id):
         else:
             return create_bad_request_response(result.message, result.details)
             
+    except Exception as e:
+        return create_internal_error_response(str(e))
+
+
+@groups_bp.route('/groups/<group_id>/leave', methods=['POST'])
+def leave_group(group_id):
+    """
+    Leave a specific group.
+    
+    Args:
+        group_id (str): The unique identifier of the group to leave
+        
+    Returns:
+        JSON response with success message or error
+    """
+    try:
+        # TODO: Add authentication check to get user_id
+        # TODO: Implement leave group logic
+        return create_success_response("Group leave not yet implemented", {}, 501)
+        
     except Exception as e:
         return create_internal_error_response(str(e))
 

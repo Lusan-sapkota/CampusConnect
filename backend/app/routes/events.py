@@ -63,6 +63,63 @@ def get_event_by_id(event_id):
         return create_internal_error_response(str(e))
 
 
+@events_bp.route('/events', methods=['POST'])
+def create_event():
+    """
+    Create a new event.
+    
+    Returns:
+        JSON response with created event data or error message
+    """
+    try:
+        # TODO: Add authentication check
+        # TODO: Implement event creation logic
+        return create_success_response("Event creation not yet implemented", {}, 501)
+        
+    except Exception as e:
+        return create_internal_error_response(str(e))
+
+
+@events_bp.route('/events/<event_id>', methods=['PUT'])
+def update_event(event_id):
+    """
+    Update an existing event.
+    
+    Args:
+        event_id (str): The unique identifier of the event to update
+        
+    Returns:
+        JSON response with updated event data or error message
+    """
+    try:
+        # TODO: Add authentication check
+        # TODO: Implement event update logic
+        return create_success_response("Event update not yet implemented", {}, 501)
+        
+    except Exception as e:
+        return create_internal_error_response(str(e))
+
+
+@events_bp.route('/events/<event_id>', methods=['DELETE'])
+def delete_event(event_id):
+    """
+    Delete an event.
+    
+    Args:
+        event_id (str): The unique identifier of the event to delete
+        
+    Returns:
+        JSON response with success message or error
+    """
+    try:
+        # TODO: Add authentication check
+        # TODO: Implement event deletion logic
+        return create_success_response("Event deletion not yet implemented", {}, 501)
+        
+    except Exception as e:
+        return create_internal_error_response(str(e))
+
+
 @events_bp.route('/events/<event_id>/join', methods=['POST'])
 def join_event(event_id):
     """
@@ -96,6 +153,66 @@ def join_event(event_id):
             return create_success_response(result.message, result.data, 200)
         else:
             return create_bad_request_response(result.message, result.details)
+        
+    except Exception as e:
+        return create_internal_error_response(str(e))
+
+
+@events_bp.route('/events/<event_id>/leave', methods=['POST'])
+def leave_event(event_id):
+    """
+    Leave a specific event.
+    
+    Args:
+        event_id (str): The unique identifier of the event to leave
+        
+    Returns:
+        JSON response with success message or error
+    """
+    try:
+        # TODO: Add authentication check to get user_id
+        # TODO: Implement leave event logic
+        return create_success_response("Event leave not yet implemented", {}, 501)
+        
+    except Exception as e:
+        return create_internal_error_response(str(e))
+
+
+@events_bp.route('/events/<event_id>/save', methods=['POST'])
+def save_event(event_id):
+    """
+    Save an event to user's saved events.
+    
+    Args:
+        event_id (str): The unique identifier of the event to save
+        
+    Returns:
+        JSON response with success message or error
+    """
+    try:
+        # TODO: Add authentication check to get user_id
+        # TODO: Implement save event logic
+        return create_success_response("Event save not yet implemented", {}, 501)
+        
+    except Exception as e:
+        return create_internal_error_response(str(e))
+
+
+@events_bp.route('/events/<event_id>/unsave', methods=['POST'])
+def unsave_event(event_id):
+    """
+    Remove an event from user's saved events.
+    
+    Args:
+        event_id (str): The unique identifier of the event to unsave
+        
+    Returns:
+        JSON response with success message or error
+    """
+    try:
+        # TODO: Add authentication check to get user_id
+        # TODO: Implement unsave event logic
+        return create_success_response("Event unsave not yet implemented", {}, 501)
         
     except Exception as e:
         return create_internal_error_response(str(e))

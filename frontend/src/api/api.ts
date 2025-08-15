@@ -104,12 +104,96 @@ export const eventsApi = {
   },
 
   /**
+   * Create a new event
+   */
+  create: async (eventData: FormData): Promise<ApiResponse<Event>> => {
+    const token = localStorage.getItem('auth_token');
+    return apiRequest<ApiResponse<Event>>('/events', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      body: eventData,
+    });
+  },
+
+  /**
+   * Update an event
+   */
+  update: async (id: string, eventData: FormData): Promise<ApiResponse<Event>> => {
+    const token = localStorage.getItem('auth_token');
+    return apiRequest<ApiResponse<Event>>(`/events/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      body: eventData,
+    });
+  },
+
+  /**
+   * Delete an event
+   */
+  delete: async (id: string): Promise<ApiResponse> => {
+    const token = localStorage.getItem('auth_token');
+    return apiRequest<ApiResponse>(`/events/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+  },
+
+  /**
    * Join an event
    */
   join: async (id: string, userData: JoinEventRequest): Promise<ApiResponse> => {
+    const token = localStorage.getItem('auth_token');
     return apiRequest<ApiResponse>(`/events/${id}/join`, {
       method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
       body: JSON.stringify(userData),
+    });
+  },
+
+  /**
+   * Leave an event
+   */
+  leave: async (id: string): Promise<ApiResponse> => {
+    const token = localStorage.getItem('auth_token');
+    return apiRequest<ApiResponse>(`/events/${id}/leave`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+  },
+
+  /**
+   * Save an event
+   */
+  save: async (id: string): Promise<ApiResponse> => {
+    const token = localStorage.getItem('auth_token');
+    return apiRequest<ApiResponse>(`/events/${id}/save`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+  },
+
+  /**
+   * Unsave an event
+   */
+  unsave: async (id: string): Promise<ApiResponse> => {
+    const token = localStorage.getItem('auth_token');
+    return apiRequest<ApiResponse>(`/events/${id}/unsave`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
     });
   },
 };
@@ -136,12 +220,70 @@ export const groupsApi = {
   },
 
   /**
+   * Create a new group
+   */
+  create: async (groupData: FormData): Promise<ApiResponse<Group>> => {
+    const token = localStorage.getItem('auth_token');
+    return apiRequest<ApiResponse<Group>>('/groups', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      body: groupData,
+    });
+  },
+
+  /**
+   * Update a group
+   */
+  update: async (id: string, groupData: FormData): Promise<ApiResponse<Group>> => {
+    const token = localStorage.getItem('auth_token');
+    return apiRequest<ApiResponse<Group>>(`/groups/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      body: groupData,
+    });
+  },
+
+  /**
+   * Delete a group
+   */
+  delete: async (id: string): Promise<ApiResponse> => {
+    const token = localStorage.getItem('auth_token');
+    return apiRequest<ApiResponse>(`/groups/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+  },
+
+  /**
    * Join a group
    */
   join: async (id: string, userData: JoinGroupRequest): Promise<ApiResponse> => {
+    const token = localStorage.getItem('auth_token');
     return apiRequest<ApiResponse>(`/groups/${id}/join`, {
       method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
       body: JSON.stringify(userData),
+    });
+  },
+
+  /**
+   * Leave a group
+   */
+  leave: async (id: string): Promise<ApiResponse> => {
+    const token = localStorage.getItem('auth_token');
+    return apiRequest<ApiResponse>(`/groups/${id}/leave`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
     });
   },
 };
@@ -157,23 +299,108 @@ export const postsApi = {
   },
 
   /**
+   * Get post by ID
+   */
+  getById: async (id: string): Promise<Post> => {
+    const response = await apiRequest<ApiResponse<Post>>(`/posts/${id}`);
+    if (!response.data) {
+      throw new ApiError('Post not found');
+    }
+    return response.data;
+  },
+
+  /**
    * Create a new post
    */
   create: async (postData: CreatePostRequest): Promise<ApiResponse<Post>> => {
+    const token = localStorage.getItem('auth_token');
     return apiRequest<ApiResponse<Post>>('/posts', {
       method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'X-User-ID': 'user-1', // TODO: Get from auth context
+      },
       body: JSON.stringify(postData),
+    });
+  },
+
+  /**
+   * Update a post
+   */
+  update: async (id: string, postData: CreatePostRequest): Promise<ApiResponse<Post>> => {
+    const token = localStorage.getItem('auth_token');
+    return apiRequest<ApiResponse<Post>>(`/posts/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'X-User-ID': 'user-1', // TODO: Get from auth context
+      },
+      body: JSON.stringify(postData),
+    });
+  },
+
+  /**
+   * Delete a post
+   */
+  delete: async (id: string): Promise<ApiResponse> => {
+    const token = localStorage.getItem('auth_token');
+    return apiRequest<ApiResponse>(`/posts/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'X-User-ID': 'user-1', // TODO: Get from auth context
+      },
     });
   },
 
   /**
    * Like a post
    */
-  like: async (id: string, userData: LikePostRequest): Promise<ApiResponse> => {
+  like: async (id: string): Promise<ApiResponse> => {
+    const token = localStorage.getItem('auth_token');
     return apiRequest<ApiResponse>(`/posts/${id}/like`, {
       method: 'POST',
-      body: JSON.stringify(userData),
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'X-User-ID': 'user-1', // TODO: Get from auth context
+      },
     });
+  },
+
+  /**
+   * Unlike a post
+   */
+  unlike: async (id: string): Promise<ApiResponse> => {
+    const token = localStorage.getItem('auth_token');
+    return apiRequest<ApiResponse>(`/posts/${id}/unlike`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'X-User-ID': 'user-1', // TODO: Get from auth context
+      },
+    });
+  },
+
+  /**
+   * Add comment to a post
+   */
+  addComment: async (id: string, comment: string): Promise<ApiResponse> => {
+    const token = localStorage.getItem('auth_token');
+    return apiRequest<ApiResponse>(`/posts/${id}/comments`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'X-User-ID': 'user-1', // TODO: Get from auth context
+      },
+      body: JSON.stringify({ comment }),
+    });
+  },
+
+  /**
+   * Get comments for a post
+   */
+  getComments: async (id: string): Promise<ApiResponse> => {
+    return apiRequest<ApiResponse>(`/posts/${id}/comments`);
   },
 };
 
@@ -354,12 +581,77 @@ export const authApi = {
   },
 };
 
+// Users API
+export const usersApi = {
+  /**
+   * Get user profile by ID
+   */
+  getById: async (id: string): Promise<any> => {
+    const response = await apiRequest<ApiResponse<any>>(`/users/${id}`);
+    if (!response.data) {
+      throw new ApiError('User not found');
+    }
+    return response.data;
+  },
+
+  /**
+   * Follow a user
+   */
+  follow: async (id: string): Promise<ApiResponse> => {
+    const token = localStorage.getItem('auth_token');
+    return apiRequest<ApiResponse>(`/users/${id}/follow`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+  },
+
+  /**
+   * Unfollow a user
+   */
+  unfollow: async (id: string): Promise<ApiResponse> => {
+    const token = localStorage.getItem('auth_token');
+    return apiRequest<ApiResponse>(`/users/${id}/unfollow`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+  },
+
+  /**
+   * Get user's posts
+   */
+  getPosts: async (id: string): Promise<Post[]> => {
+    const response = await apiRequest<ApiResponse<Post[]>>(`/users/${id}/posts`);
+    return response.data || [];
+  },
+
+  /**
+   * Get user's events
+   */
+  getEvents: async (id: string): Promise<Event[]> => {
+    const response = await apiRequest<ApiResponse<Event[]>>(`/users/${id}/events`);
+    return response.data || [];
+  },
+
+  /**
+   * Get user's groups
+   */
+  getGroups: async (id: string): Promise<Group[]> => {
+    const response = await apiRequest<ApiResponse<Group[]>>(`/users/${id}/groups`);
+    return response.data || [];
+  },
+};
+
 // Main API object for convenience
 export const api = {
   events: eventsApi,
   groups: groupsApi,
   posts: postsApi,
   auth: authApi,
+  users: usersApi,
 };
 
 // Legacy functions for backward compatibility (as specified in requirements)

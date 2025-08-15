@@ -83,12 +83,16 @@ export const GroupDetailsPage: React.FC = () => {
     
     setJoining(true);
     try {
-      // TODO: Implement leave group API
-      setGroup(prev => prev ? {
-        ...prev,
-        isJoined: false,
-        members: prev.members - 1
-      } : null);
+      const response = await api.groups.leave(group.id);
+      if (response.success) {
+        setGroup(prev => prev ? {
+          ...prev,
+          isJoined: false,
+          members: prev.members - 1
+        } : null);
+      } else {
+        setError(response.message || 'Failed to leave group');
+      }
     } catch (error: any) {
       setError(error.message || 'Failed to leave group');
     } finally {
@@ -100,8 +104,12 @@ export const GroupDetailsPage: React.FC = () => {
     if (!group || !window.confirm('Are you sure you want to delete this group?')) return;
     
     try {
-      // TODO: Implement delete group API
-      navigate('/groups');
+      const response = await api.groups.delete(group.id);
+      if (response.success) {
+        navigate('/groups');
+      } else {
+        setError(response.message || 'Failed to delete group');
+      }
     } catch (error: any) {
       setError(error.message || 'Failed to delete group');
     }

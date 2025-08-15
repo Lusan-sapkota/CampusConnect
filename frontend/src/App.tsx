@@ -7,6 +7,12 @@ import { ProfilePage } from './pages/ProfilePage';
 import { JoinedEventsPage } from './pages/JoinedEventsPage';
 import { SavedEventsPage } from './pages/SavedEventsPage';
 import { JoinedGroupsPage } from './pages/JoinedGroupsPage';
+import { GroupDetailsPage } from './pages/GroupDetailsPage';
+import { AddGroupPage } from './pages/AddGroupPage';
+import { AddEventPage } from './pages/AddEventPage';
+import { AddPostPage } from './pages/AddPostPage';
+import { EditPostPage } from './pages/EditPostPage';
+import { UserProfilePage } from './pages/UserProfilePage';
 import { useAuth } from './contexts/AuthContext';
 import Navbar from './components/Navbar';
 import HomePage from './pages/HomePage';
@@ -38,8 +44,10 @@ const AppContent: React.FC = () => {
           {/* Public routes - accessible without authentication */}
           <Route path="/" element={<HomePage />} />
           <Route path="/groups" element={<GroupsPage />} />
+          <Route path="/group/:id" element={<GroupDetailsPage />} />
           <Route path="/events" element={<EventsPage />} />
           <Route path="/event/:id" element={<EventDetailsPage />} />
+          <Route path="/user/:id" element={<UserProfilePage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/policy" element={<PolicyPage />} />
           {/* Auth routes */}
@@ -76,6 +84,38 @@ const AppContent: React.FC = () => {
             element={
               <ProtectedRoute>
                 <JoinedGroupsPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/add-group" 
+            element={
+              <ProtectedRoute>
+                <AddGroupPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/add-event" 
+            element={
+              <ProtectedRoute>
+                <AddEventPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/add-post" 
+            element={
+              <ProtectedRoute>
+                <AddPostPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/post/:id/edit" 
+            element={
+              <ProtectedRoute>
+                <EditPostPage />
               </ProtectedRoute>
             } 
           />

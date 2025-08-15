@@ -1,33 +1,23 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Upload, X, Calendar } from 'lucide-react';
+import { ArrowLeft, Upload, X, FileText } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { api } from '../api/api';
 
-interface EventFormData {
+interface PostFormData {
   title: string;
-  description: string;
+  content: string;
   category: string;
-  date: string;
-  time: string;
-  location: string;
-  organizer: string;
-  maxAttendees: string;
   image: File | null;
 }
 
-export const AddEventPage: React.FC = () => {
+export const AddPostPage: React.FC = () => {
   const navigate = useNavigate();
   const { state } = useAuth();
-  const [formData, setFormData] = useState<EventFormData>({
+  const [formData, setFormData] = useState<PostFormData>({
     title: '',
-    description: '',
+    content: '',
     category: '',
-    date: '',
-    time: '',
-    location: '',
-    organizer: state.user?.full_name || `${state.user?.first_name} ${state.user?.last_name}` || '',
-    maxAttendees: '',
     image: null
   });
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -35,69 +25,41 @@ export const AddEventPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const categories = [
+    { value: 'general', label: 'General' },
     { value: 'academic', label: 'Academic' },
     { value: 'social', label: 'Social' },
     { value: 'sports', label: 'Sports' },
     { value: 'arts', label: 'Arts & Culture' },
-    { value: 'career', label: 'Career' }
+    { value: 'career', label: 'Career' },
+    { value: 'announcement', label: 'Announcement' }
   ];
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
     if (!formData.title.trim()) {
-      newErrors.title = 'Event title is required';
+      newErrors.title = 'Post title is required';
+    } else if (formData.title.length > 200) {
+      newErrors.title = 'Title must be less than 200 characters';
     }
 
-    if (!formData.description.trim()) {
-      newErrors.description = 'Description is required';
-    } else if (formData.description.length < 50) {
-      newErrors.description = 'Description must be at least 50 characters';
+    if (!formData.content.trim()) {
+      newErrors.content = 'Post content is required';
+    } else if (formData.content.length < 10) {
+      newErrors.content = 'Content must be at least 10 characters';
+    } else if (formData.content.length > 5000) {
+      newErrors.content = 'Content must be less than 5000 characters';
     }
 
     if (!formData.category) {
       newErrors.category = 'Category is required';
     }
 
-    if (!formData.date) {
-      newErrors.date = 'Event date is required';
-    } else {
-      const eventDate = new Date(formData.date);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      if (eventDate < today) {
-        newErrors.date = 'Event date cannot be in the past';
-      }
-    }
-
-    if (!formData.time.trim()) {
-      newErrors.time = 'Event time is required';
-    }
-
-    if (!formData.location.trim()) {
-      newErrors.location = 'Location is required';
-    }
-
-    if (!formData.organizer.trim()) {
-      newErrors.organizer = 'Organizer name is required';
-    }
-
-    if (!formData.maxAttendees.trim()) {
-      newErrors.maxAttendees = 'Maximum attendees is required';
-    } else {
-      const maxAttendees = parseInt(formData.maxAttendees);
-      if (isNaN(maxAttendees) || maxAttendees < 1) {
-        newErrors.maxAttendees = 'Maximum attendees must be a positive number';
-      } else if (maxAttendees > 10000) {
-        newErrors.maxAttendees = 'Maximum attendees cannot exceed 10,000';
-      }
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleInputChange = (field: keyof EventFormData, value: string) => {
+  const handleInputChange = (field: keyof PostFormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
@@ -144,29 +106,23 @@ export const AddEventPage: React.FC = () => {
     setIsSubmitting(true);
     
     try {
-      const eventData = new FormData();
-      eventData.append('title', formData.title);
-      eventData.append('description', formData.description);
-      eventData.append('category', formData.category);
-      eventData.append('date', formData.date);
-      eventData.append('time', formData.time);
-      eventData.append('location', formData.location);
-      eventData.append('organizer', formData.organizer);
-      eventData.append('max_attendees', formData.maxAttendees);
-      
-      if (formData.image) {
-        eventData.append('image', formData.image);
-      }
+      const postData = {
+        title: formData.title,
+        content: formData.content,
+        category: formData.category,
+        author: state.user?.full_name || `${state.user?.first_name} ${state.user?.last_name}` || 'Anonymous',
+        authorEmail: state.user?.email || ''
+      };
 
-      const response = await api.events.create(eventData);
+      const response = await api.posts.create(postData);
       
       if (response.success) {
-        navigate('/events');
+        navigate('/');
       } else {
-        setErrors({ submit: response.message || 'Failed to create event' });
+        setErrors({ submit: response.message || 'Failed to create post' });
       }
     } catch (error: any) {
-      setErrors({ submit: error.message || 'Failed to create event' });
+      setErrors({ submit: error.message || 'Failed to create post' });
     } finally {
       setIsSubmitting(false);
     }
@@ -184,19 +140,19 @@ export const AddEventPage: React.FC = () => {
             <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
           </button>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Create New Event</h1>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Create New Post</h1>
             <p className="text-gray-600 dark:text-gray-400 mt-1">
-              Organize an event for your campus community
+              Share something with your campus community
             </p>
           </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-8">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-            {/* Event Image */}
+            {/* Post Image */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Event Image
+                Post Image (Optional)
               </label>
               <div className="flex items-center space-x-4">
                 {imagePreview ? (
@@ -216,7 +172,7 @@ export const AddEventPage: React.FC = () => {
                   </div>
                 ) : (
                   <div className="w-32 h-32 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg flex items-center justify-center">
-                    <Calendar className="w-8 h-8 text-gray-400" />
+                    <FileText className="w-8 h-8 text-gray-400" />
                   </div>
                 )}
                 <div>
@@ -225,10 +181,10 @@ export const AddEventPage: React.FC = () => {
                     accept="image/*"
                     onChange={handleImageChange}
                     className="hidden"
-                    id="event-image"
+                    id="post-image"
                   />
                   <label
-                    htmlFor="event-image"
+                    htmlFor="post-image"
                     className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer transition-colors"
                   >
                     <Upload className="w-4 h-4 mr-2" />
@@ -245,10 +201,10 @@ export const AddEventPage: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Event Title */}
+              {/* Post Title */}
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Event Title *
+                  Post Title *
                 </label>
                 <input
                   type="text"
@@ -257,15 +213,21 @@ export const AddEventPage: React.FC = () => {
                   className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
                     errors.title ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
                   }`}
-                  placeholder="Enter event title"
+                  placeholder="Enter post title"
+                  maxLength={200}
                 />
-                {errors.title && (
-                  <p className="text-red-500 text-sm mt-1">{errors.title}</p>
-                )}
+                <div className="flex justify-between items-center mt-1">
+                  {errors.title && (
+                    <p className="text-red-500 text-sm">{errors.title}</p>
+                  )}
+                  <p className="text-sm text-gray-500 dark:text-gray-400 ml-auto">
+                    {formData.title.length}/200
+                  </p>
+                </div>
               </div>
 
               {/* Category */}
-              <div>
+              <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Category *
                 </label>
@@ -287,125 +249,29 @@ export const AddEventPage: React.FC = () => {
                   <p className="text-red-500 text-sm mt-1">{errors.category}</p>
                 )}
               </div>
-
-              {/* Max Attendees */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Maximum Attendees *
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  max="10000"
-                  value={formData.maxAttendees}
-                  onChange={(e) => handleInputChange('maxAttendees', e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
-                    errors.maxAttendees ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                  }`}
-                  placeholder="e.g., 100"
-                />
-                {errors.maxAttendees && (
-                  <p className="text-red-500 text-sm mt-1">{errors.maxAttendees}</p>
-                )}
-              </div>
-
-              {/* Date */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Event Date *
-                </label>
-                <input
-                  type="date"
-                  value={formData.date}
-                  onChange={(e) => handleInputChange('date', e.target.value)}
-                  min={new Date().toISOString().split('T')[0]}
-                  className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
-                    errors.date ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                  }`}
-                />
-                {errors.date && (
-                  <p className="text-red-500 text-sm mt-1">{errors.date}</p>
-                )}
-              </div>
-
-              {/* Time */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Event Time *
-                </label>
-                <input
-                  type="text"
-                  value={formData.time}
-                  onChange={(e) => handleInputChange('time', e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
-                    errors.time ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                  }`}
-                  placeholder="e.g., 2:00 PM - 4:00 PM"
-                />
-                {errors.time && (
-                  <p className="text-red-500 text-sm mt-1">{errors.time}</p>
-                )}
-              </div>
-
-              {/* Location */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Location *
-                </label>
-                <input
-                  type="text"
-                  value={formData.location}
-                  onChange={(e) => handleInputChange('location', e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
-                    errors.location ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                  }`}
-                  placeholder="e.g., Student Union Building"
-                />
-                {errors.location && (
-                  <p className="text-red-500 text-sm mt-1">{errors.location}</p>
-                )}
-              </div>
-
-              {/* Organizer */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Organizer *
-                </label>
-                <input
-                  type="text"
-                  value={formData.organizer}
-                  onChange={(e) => handleInputChange('organizer', e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
-                    errors.organizer ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                  }`}
-                  placeholder="Organization or person name"
-                />
-                {errors.organizer && (
-                  <p className="text-red-500 text-sm mt-1">{errors.organizer}</p>
-                )}
-              </div>
             </div>
 
-            {/* Description */}
+            {/* Content */}
             <div className="mt-6">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Event Description *
+                Post Content *
               </label>
               <textarea
-                value={formData.description}
-                onChange={(e) => handleInputChange('description', e.target.value)}
-                rows={6}
+                value={formData.content}
+                onChange={(e) => handleInputChange('content', e.target.value)}
+                rows={8}
                 className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none ${
-                  errors.description ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                  errors.content ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
                 }`}
-                placeholder="Describe your event, what attendees can expect, agenda, requirements, etc..."
+                placeholder="What's on your mind? Share your thoughts, questions, or announcements with the community..."
+                maxLength={5000}
               />
               <div className="flex justify-between items-center mt-1">
-                {errors.description && (
-                  <p className="text-red-500 text-sm">{errors.description}</p>
+                {errors.content && (
+                  <p className="text-red-500 text-sm">{errors.content}</p>
                 )}
                 <p className="text-sm text-gray-500 dark:text-gray-400 ml-auto">
-                  {formData.description.length}/2000
+                  {formData.content.length}/5000
                 </p>
               </div>
             </div>
@@ -435,10 +301,10 @@ export const AddEventPage: React.FC = () => {
               {isSubmitting ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Creating...
+                  Publishing...
                 </>
               ) : (
-                'Create Event'
+                'Publish Post'
               )}
             </button>
           </div>

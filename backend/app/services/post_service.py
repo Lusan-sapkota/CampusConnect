@@ -3,90 +3,41 @@ Post service module providing business logic for post operations.
 
 This module contains the PostService class that handles all post-related
 business logic including retrieving posts, liking posts, creating posts,
-and managing post data with mock data for development.
+and managing post data with database integration.
 """
 
-from typing import List, Optional
-from app.models.data_models import Post, LikePostRequest, CreatePostRequest, ApiResponse, Author
+from typing import List, Optional, Dict, Any
+from app.models.data_models import LikePostRequest, CreatePostRequest, ApiResponse
+from app.models.auth_models import Post, User, Comment
+from app.database import get_db
 import uuid
 from datetime import datetime
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class PostService:
     """Service class for handling post-related business logic."""
-    
-    # Mock posts data matching the frontend structure
-    _mock_posts = [
-        {
-            "id": "1",
-            "title": "Study Group for CS 101 Final Exam",
-            "description": "Hey everyone! I'm organizing a study group for the CS 101 final exam next week. We'll be meeting in the library on Saturday at 2 PM. Bring your notes and let's ace this together!",
-            "author": {
-                "name": "Sarah Chen",
-                "avatar": "https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop",
-                "role": "Computer Science Student"
-            },
-            "timestamp": "2 hours ago",
-            "likes": 24,
-            "comments": 8,
-            "category": "academic"
-        },
-        {
-            "id": "2",
-            "title": "Campus Coffee Shop Opens Tomorrow!",
-            "description": "Exciting news! The new Brew & Books café is opening tomorrow in the Student Union building. They'll be serving locally roasted coffee and offering 20% discount to all students with valid ID!",
-            "author": {
-                "name": "Campus News",
-                "avatar": "https://images.pexels.com/photos/1181605/pexels-photo-1181605.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop",
-                "role": "Official Account"
-            },
-            "timestamp": "4 hours ago",
-            "likes": 156,
-            "comments": 32,
-            "category": "announcement"
-        },
-        {
-            "id": "3",
-            "title": "Looking for Basketball Players",
-            "description": "Our intramural basketball team needs 2 more players for the upcoming season. We practice Tuesdays and Thursdays at 6 PM. No experience necessary, just bring your enthusiasm!",
-            "author": {
-                "name": "Mike Rodriguez",
-                "avatar": "https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop",
-                "role": "Sports Management Student"
-            },
-            "timestamp": "1 day ago",
-            "likes": 43,
-            "comments": 15,
-            "category": "social"
-        },
-        {
-            "id": "4",
-            "title": "Free Tutoring Available",
-            "description": "The Academic Success Center is offering free tutoring sessions for Math, Physics, and Chemistry. Sessions are available Monday through Friday, 10 AM to 8 PM. Book your slot online!",
-            "author": {
-                "name": "Academic Success Center",
-                "avatar": "https://images.pexels.com/photos/1181686/pexels-photo-1181686.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop",
-                "role": "Campus Resource"
-            },
-            "timestamp": "2 days ago",
-            "likes": 89,
-            "comments": 12,
-            "category": "academic"
-        }
-    ]
 
     @classmethod
-    def get_all_posts(cls) -> List[Post]:
+    def get_all_posts(cls) -> List[Dict[str, Any]]:
         """
         Retrieve all available posts.
         
         Returns:
-            List[Post]: List of all posts with validation
+            List[Dict]: List of all posts from database
         """
-        return [Post(**post_data) for post_data in cls._mock_posts]
+        try:
+            with get_db() as db:
+                posts = db.query(Post).filter(Post.is_active == True).order_by(Post.created_at.desc()).all()
+                return [post.to_dict() for post in posts]
+        except Exception as e:
+            logger.error(f"Error retrieving posts: {str(e)}")
+            return []
 
     @classmethod
-    def get_post_by_id(cls, post_id: str) -> Optional[Post]:
+    def get_post_by_id(cls, post_id: str) -> Optional[Dict[str, Any]]:
         """
         Retrieve a specific post by its ID.
         
@@ -94,105 +45,284 @@ class PostService:
             post_id (str): The unique identifier of the post
             
         Returns:
-            Optional[Post]: The post if found, None otherwise
+            Optional[Dict]: The post if found, None otherwise
         """
-        post_data = next((post for post in cls._mock_posts if post['id'] == post_id), None)
-        return Post(**post_data) if post_data else None
+        try:
+            with get_db() as db:
+                post = db.query(Post).filter(Post.id == post_id, Post.is_active == True).first()
+                return post.to_dict() if post else None
+        except Exception as e:
+            logger.error(f"Error retrieving post {post_id}: {str(e)}")
+            return None
 
     @classmethod
-    def like_post(cls, post_id: str, like_request: LikePostRequest) -> ApiResponse:
+    def like_post(cls, post_id: str, user_id: str) -> ApiResponse:
         """
         Handle liking a post.
         
         Args:
             post_id (str): The unique identifier of the post to like
-            like_request (LikePostRequest): The like request data
+            user_id (str): The ID of the user liking the post
             
         Returns:
             ApiResponse: Success or error response
         """
-        # Find the post
-        post_data = next((post for post in cls._mock_posts if post['id'] == post_id), None)
-        
-        if not post_data:
+        try:
+            with get_db() as db:
+                # Find the post
+                post = db.query(Post).filter(Post.id == post_id, Post.is_active == True).first()
+                if not post:
+                    return ApiResponse(
+                        success=False,
+                        message=f"Post with ID {post_id} not found"
+                    )
+                
+                # Find the user
+                user = db.query(User).filter(User.id == user_id).first()
+                if not user:
+                    return ApiResponse(
+                        success=False,
+                        message="User not found"
+                    )
+                
+                # Check if user has already liked this post
+                if user in post.liked_by_users:
+                    return ApiResponse(
+                        success=False,
+                        message="You have already liked this post"
+                    )
+                
+                # Add like
+                post.liked_by_users.append(user)
+                db.commit()
+                
+                logger.info(f"User {user.email} liked post {post.title}")
+                return ApiResponse(
+                    success=True,
+                    message=f"Successfully liked post '{post.title}'",
+                    data={
+                        "post_id": post_id,
+                        "post_title": post.title,
+                        "user_id": user_id,
+                        "new_like_count": post.like_count
+                    }
+                )
+                
+        except Exception as e:
+            logger.error(f"Error liking post {post_id}: {str(e)}")
             return ApiResponse(
                 success=False,
-                message=f"Post with ID {post_id} not found"
+                message="Failed to like post"
             )
-        
-        # In a real implementation, we would:
-        # 1. Check if user has already liked this post
-        # 2. Toggle like status (like/unlike)
-        # 3. Update database
-        # 4. Possibly notify post author
-        
-        # For mock implementation, just increment likes count
-        post_data['likes'] += 1
-        
-        return ApiResponse(
-            success=True,
-            message=f"Successfully liked post '{post_data['title']}'",
-            data={
-                "post_id": post_id,
-                "post_title": post_data['title'],
-                "user_id": like_request.user_id,
-                "new_like_count": post_data['likes']
-            }
-        )
 
     @classmethod
-    def create_post(cls, create_request: CreatePostRequest) -> ApiResponse:
+    def unlike_post(cls, post_id: str, user_id: str) -> ApiResponse:
+        """
+        Handle unliking a post.
+        
+        Args:
+            post_id (str): The unique identifier of the post to unlike
+            user_id (str): The ID of the user unliking the post
+            
+        Returns:
+            ApiResponse: Success or error response
+        """
+        try:
+            with get_db() as db:
+                # Find the post
+                post = db.query(Post).filter(Post.id == post_id, Post.is_active == True).first()
+                if not post:
+                    return ApiResponse(
+                        success=False,
+                        message=f"Post with ID {post_id} not found"
+                    )
+                
+                # Find the user
+                user = db.query(User).filter(User.id == user_id).first()
+                if not user:
+                    return ApiResponse(
+                        success=False,
+                        message="User not found"
+                    )
+                
+                # Check if user has liked this post
+                if user not in post.liked_by_users:
+                    return ApiResponse(
+                        success=False,
+                        message="You haven't liked this post"
+                    )
+                
+                # Remove like
+                post.liked_by_users.remove(user)
+                db.commit()
+                
+                logger.info(f"User {user.email} unliked post {post.title}")
+                return ApiResponse(
+                    success=True,
+                    message=f"Successfully unliked post '{post.title}'",
+                    data={
+                        "post_id": post_id,
+                        "post_title": post.title,
+                        "user_id": user_id,
+                        "new_like_count": post.like_count
+                    }
+                )
+                
+        except Exception as e:
+            logger.error(f"Error unliking post {post_id}: {str(e)}")
+            return ApiResponse(
+                success=False,
+                message="Failed to unlike post"
+            )
+
+    @classmethod
+    def create_post(cls, create_request: CreatePostRequest, author_id: str) -> ApiResponse:
         """
         Handle creating a new post.
         
         Args:
             create_request (CreatePostRequest): The post creation data
+            author_id (str): The ID of the user creating the post
             
         Returns:
             ApiResponse: Success or error response with created post data
         """
-        # Generate new post ID
-        new_post_id = str(uuid.uuid4())
-        
-        # Create new post data
-        new_post_data = {
-            "id": new_post_id,
-            "title": create_request.title,
-            "description": create_request.description,
-            "author": {
-                "name": create_request.author_name,
-                "avatar": create_request.author_avatar,
-                "role": create_request.author_role
-            },
-            "timestamp": "just now",
-            "likes": 0,
-            "comments": 0,
-            "category": create_request.category
-        }
-        
-        # In a real implementation, we would:
-        # 1. Validate user permissions
-        # 2. Save to database
-        # 3. Possibly moderate content
-        # 4. Send notifications to followers
-        
-        # For mock implementation, add to our mock data
-        cls._mock_posts.insert(0, new_post_data)  # Add to beginning for newest first
-        
-        # Create Post object for validation
-        new_post = Post(**new_post_data)
-        
-        return ApiResponse(
-            success=True,
-            message="Post created successfully",
-            data={
-                "post": new_post.dict(),
-                "post_id": new_post_id
-            }
-        )
+        try:
+            with get_db() as db:
+                # Find the author
+                author = db.query(User).filter(User.id == author_id).first()
+                if not author:
+                    return ApiResponse(
+                        success=False,
+                        message="User not found"
+                    )
+                
+                # Create new post
+                new_post = Post(
+                    title=create_request.title,
+                    description=create_request.content,  # Map content to description
+                    category=create_request.category,
+                    author_id=author_id
+                )
+                
+                db.add(new_post)
+                db.commit()
+                db.refresh(new_post)
+                
+                logger.info(f"User {author.email} created post {new_post.title}")
+                return ApiResponse(
+                    success=True,
+                    message="Post created successfully",
+                    data=new_post.to_dict()
+                )
+                
+        except Exception as e:
+            logger.error(f"Error creating post: {str(e)}")
+            return ApiResponse(
+                success=False,
+                message="Failed to create post"
+            )
 
     @classmethod
-    def get_posts_by_category(cls, category: str) -> List[Post]:
+    def update_post(cls, post_id: str, update_request: CreatePostRequest, user_id: str) -> ApiResponse:
+        """
+        Handle updating a post.
+        
+        Args:
+            post_id (str): The ID of the post to update
+            update_request (CreatePostRequest): The updated post data
+            user_id (str): The ID of the user updating the post
+            
+        Returns:
+            ApiResponse: Success or error response
+        """
+        try:
+            with get_db() as db:
+                # Find the post
+                post = db.query(Post).filter(Post.id == post_id, Post.is_active == True).first()
+                if not post:
+                    return ApiResponse(
+                        success=False,
+                        message="Post not found"
+                    )
+                
+                # Check if user is the author
+                if post.author_id != user_id:
+                    return ApiResponse(
+                        success=False,
+                        message="You can only edit your own posts"
+                    )
+                
+                # Update post
+                post.title = update_request.title
+                post.description = update_request.content
+                post.category = update_request.category
+                
+                db.commit()
+                db.refresh(post)
+                
+                logger.info(f"User {user_id} updated post {post.title}")
+                return ApiResponse(
+                    success=True,
+                    message="Post updated successfully",
+                    data=post.to_dict()
+                )
+                
+        except Exception as e:
+            logger.error(f"Error updating post {post_id}: {str(e)}")
+            return ApiResponse(
+                success=False,
+                message="Failed to update post"
+            )
+
+    @classmethod
+    def delete_post(cls, post_id: str, user_id: str) -> ApiResponse:
+        """
+        Handle deleting a post.
+        
+        Args:
+            post_id (str): The ID of the post to delete
+            user_id (str): The ID of the user deleting the post
+            
+        Returns:
+            ApiResponse: Success or error response
+        """
+        try:
+            with get_db() as db:
+                # Find the post
+                post = db.query(Post).filter(Post.id == post_id, Post.is_active == True).first()
+                if not post:
+                    return ApiResponse(
+                        success=False,
+                        message="Post not found"
+                    )
+                
+                # Check if user is the author
+                if post.author_id != user_id:
+                    return ApiResponse(
+                        success=False,
+                        message="You can only delete your own posts"
+                    )
+                
+                # Soft delete
+                post.is_active = False
+                db.commit()
+                
+                logger.info(f"User {user_id} deleted post {post.title}")
+                return ApiResponse(
+                    success=True,
+                    message="Post deleted successfully"
+                )
+                
+        except Exception as e:
+            logger.error(f"Error deleting post {post_id}: {str(e)}")
+            return ApiResponse(
+                success=False,
+                message="Failed to delete post"
+            )
+
+    @classmethod
+    def get_posts_by_category(cls, category: str) -> List[Dict[str, Any]]:
         """
         Retrieve posts filtered by category.
         
@@ -200,21 +330,142 @@ class PostService:
             category (str): The category to filter by
             
         Returns:
-            List[Post]: List of posts in the specified category
+            List[Dict]: List of posts in the specified category
         """
-        filtered_posts = [post for post in cls._mock_posts if post['category'] == category]
-        return [Post(**post_data) for post_data in filtered_posts]
+        try:
+            with get_db() as db:
+                posts = db.query(Post).filter(
+                    Post.category == category,
+                    Post.is_active == True
+                ).order_by(Post.created_at.desc()).all()
+                return [post.to_dict() for post in posts]
+        except Exception as e:
+            logger.error(f"Error retrieving posts by category {category}: {str(e)}")
+            return []
 
     @classmethod
-    def get_posts_by_author(cls, author_name: str) -> List[Post]:
+    def get_posts_by_author(cls, author_id: str) -> List[Dict[str, Any]]:
         """
-        Retrieve posts filtered by author name.
+        Retrieve posts filtered by author ID.
         
         Args:
-            author_name (str): The author name to filter by
+            author_id (str): The author ID to filter by
             
         Returns:
-            List[Post]: List of posts by the specified author
+            List[Dict]: List of posts by the specified author
         """
-        filtered_posts = [post for post in cls._mock_posts if post['author']['name'] == author_name]
-        return [Post(**post_data) for post_data in filtered_posts]
+        try:
+            with get_db() as db:
+                posts = db.query(Post).filter(
+                    Post.author_id == author_id,
+                    Post.is_active == True
+                ).order_by(Post.created_at.desc()).all()
+                return [post.to_dict() for post in posts]
+        except Exception as e:
+            logger.error(f"Error retrieving posts by author {author_id}: {str(e)}")
+            return []
+
+    @classmethod
+    def add_comment(cls, post_id: str, user_id: str, content: str) -> ApiResponse:
+        """
+        Add a comment to a post.
+        
+        Args:
+            post_id (str): The ID of the post to comment on
+            user_id (str): The ID of the user adding the comment
+            content (str): The comment content
+            
+        Returns:
+            ApiResponse: Success or error response
+        """
+        try:
+            with get_db() as db:
+                # Find the post
+                post = db.query(Post).filter(Post.id == post_id, Post.is_active == True).first()
+                if not post:
+                    return ApiResponse(
+                        success=False,
+                        message="Post not found"
+                    )
+                
+                # Find the user
+                user = db.query(User).filter(User.id == user_id).first()
+                if not user:
+                    return ApiResponse(
+                        success=False,
+                        message="User not found"
+                    )
+                
+                # Create comment
+                comment = Comment(
+                    content=content,
+                    post_id=post_id,
+                    author_id=user_id
+                )
+                
+                db.add(comment)
+                db.commit()
+                db.refresh(comment)
+                
+                logger.info(f"User {user.email} commented on post {post.title}")
+                return ApiResponse(
+                    success=True,
+                    message="Comment added successfully",
+                    data=comment.to_dict()
+                )
+                
+        except Exception as e:
+            logger.error(f"Error adding comment to post {post_id}: {str(e)}")
+            return ApiResponse(
+                success=False,
+                message="Failed to add comment"
+            )
+
+    @classmethod
+    def get_post_comments(cls, post_id: str) -> List[Dict[str, Any]]:
+        """
+        Get comments for a post.
+        
+        Args:
+            post_id (str): The ID of the post
+            
+        Returns:
+            List[Dict]: List of comments for the post
+        """
+        try:
+            with get_db() as db:
+                comments = db.query(Comment).filter(
+                    Comment.post_id == post_id,
+                    Comment.is_active == True
+                ).order_by(Comment.created_at.asc()).all()
+                return [comment.to_dict() for comment in comments]
+        except Exception as e:
+            logger.error(f"Error retrieving comments for post {post_id}: {str(e)}")
+            return []
+
+    @classmethod
+    def check_user_liked_post(cls, post_id: str, user_id: str) -> bool:
+        """
+        Check if a user has liked a post.
+        
+        Args:
+            post_id (str): The ID of the post
+            user_id (str): The ID of the user
+            
+        Returns:
+            bool: True if user has liked the post, False otherwise
+        """
+        try:
+            with get_db() as db:
+                post = db.query(Post).filter(Post.id == post_id).first()
+                if not post:
+                    return False
+                
+                user = db.query(User).filter(User.id == user_id).first()
+                if not user:
+                    return False
+                
+                return user in post.liked_by_users
+        except Exception as e:
+            logger.error(f"Error checking if user {user_id} liked post {post_id}: {str(e)}")
+            return False

@@ -35,11 +35,13 @@ def create_app(config_name='development'):
     from .routes.groups import groups_bp  
     from .routes.posts import posts_bp
     from .routes.auth import auth_bp
+    from .routes.users import users_bp
     
     app.register_blueprint(events_bp, url_prefix='/api')
     app.register_blueprint(groups_bp, url_prefix='/api')
     app.register_blueprint(posts_bp, url_prefix='/api')
     app.register_blueprint(auth_bp, url_prefix='/api')
+    app.register_blueprint(users_bp, url_prefix='/api')
     
     # Register centralized error handlers
     register_error_handlers(app)

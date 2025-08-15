@@ -118,10 +118,6 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({ className = '' }) => 
             <DropdownItem to="/profile" icon={<User className="w-4 h-4" />}>
               My Profile
             </DropdownItem>
-            
-            <DropdownItem to="/profile/settings" icon={<Settings className="w-4 h-4" />}>
-              Settings
-            </DropdownItem>
           </div>
 
           {/* Events & Groups Section */}

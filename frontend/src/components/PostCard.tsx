@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Heart, MessageCircle } from 'lucide-react';
 import { Post } from '../data/posts';
 import { useAuthRequired } from '../hooks/useAuthRequired';
+import { useAuth } from '../contexts/AuthContext';
 import AuthRequiredModal from './auth/AuthRequiredModal';
 import CommentsModal from './CommentsModal';
 import Avatar from './Avatar';
+import { api } from '../api/api';
 
 interface PostCardProps {
   post: Post;
@@ -12,9 +14,12 @@ interface PostCardProps {
 
 const PostCard: React.FC<PostCardProps> = ({ post }) => {
   const { showAuthModal, authAction, requireAuth, closeAuthModal } = useAuthRequired();
+  const { state } = useAuth();
   const [showComments, setShowComments] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(post.likes);
+  const [comments, setComments] = useState<any[]>([]);
+  const [isLiking, setIsLiking] = useState(false);
 
   const getCategoryColor = (category: string) => {
     switch (category) {
@@ -29,10 +34,50 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
     }
   };
 
+  useEffect(() => {
+    // Load comments when component mounts
+    loadComments();
+  }, [post.id]);
+
+  const loadComments = async () => {
+    try {
+      const response = await api.posts.getComments(post.id);
+      if (response.success && response.data) {
+        setComments(response.data);
+      }
+    } catch (error) {
+      console.error('Failed to load comments:', error);
+      setComments([]);
+    }
+  };
+
   const handleLike = () => {
-    requireAuth('like this post', () => {
-      setIsLiked(!isLiked);
-      setLikeCount(prev => isLiked ? prev - 1 : prev + 1);
+    requireAuth('like this post', async () => {
+      if (isLiking) return;
+      
+      setIsLiking(true);
+      try {
+        if (isLiked) {
+          const response = await api.posts.unlike(post.id);
+          if (response.success) {
+            setIsLiked(false);
+            setLikeCount(prev => prev - 1);
+          }
+        } else {
+          const response = await api.posts.like(post.id);
+          if (response.success) {
+            setIsLiked(true);
+            setLikeCount(prev => prev + 1);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to toggle like:', error);
+        // Optimistic update fallback
+        setIsLiked(!isLiked);
+        setLikeCount(prev => isLiked ? prev - 1 : prev + 1);
+      } finally {
+        setIsLiking(false);
+      }
     });
   };
 
@@ -42,31 +87,19 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
     });
   };
 
-  // Mock comments data - in a real app, this would come from your API
-  const mockComments = [
-    {
-      id: '1',
-      author: {
-        name: 'Sarah Johnson',
-        avatar: '/api/placeholder/32/32',
-        role: 'Student'
-      },
-      content: 'This is really helpful! Thanks for sharing.',
-      timestamp: '2h ago',
-      likes: 3
-    },
-    {
-      id: '2',
-      author: {
-        name: 'Mike Chen',
-        avatar: '/api/placeholder/32/32',
-        role: 'Student'
-      },
-      content: 'I completely agree with this perspective.',
-      timestamp: '1h ago',
-      likes: 1
+  const handleAddComment = async (commentText: string) => {
+    try {
+      const response = await api.posts.addComment(post.id, commentText);
+      if (response.success) {
+        // Reload comments to get the new one
+        await loadComments();
+      }
+    } catch (error) {
+      console.error('Failed to add comment:', error);
     }
-  ];
+  };
+
+
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6 hover:shadow-md transition-shadow duration-200">
@@ -141,7 +174,8 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
         isOpen={showComments}
         onClose={() => setShowComments(false)}
         postTitle={post.title}
-        comments={mockComments}
+        comments={comments}
+        onAddComment={handleAddComment}
       />
     </div>
   );

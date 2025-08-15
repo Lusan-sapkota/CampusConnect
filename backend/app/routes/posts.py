@@ -62,6 +62,10 @@ def create_post():
         JSON response with created post data or error message
     """
     try:
+        # TODO: Add authentication check to get user_id
+        # For now, we'll use a placeholder
+        user_id = request.headers.get('X-User-ID', 'user-1')  # Temporary
+        
         # Validate request format
         validation_error = handle_request_validation(request, required_json=True)
         if validation_error:
@@ -76,7 +80,7 @@ def create_post():
             return create_validation_error_response(e.errors())
         
         # Process create request
-        result = PostService.create_post(create_request)
+        result = PostService.create_post(create_request, user_id)
         
         if result.success:
             return create_success_response(result.message, result.data, 201)
@@ -110,6 +114,73 @@ def get_post(post_id):
         return create_internal_error_response(str(e))
 
 
+@posts_bp.route('/posts/<post_id>', methods=['PUT'])
+def update_post(post_id):
+    """
+    Update an existing post.
+    
+    Args:
+        post_id (str): The unique identifier of the post to update
+        
+    Returns:
+        JSON response with updated post data or error message
+    """
+    try:
+        # TODO: Add authentication check to get user_id
+        user_id = request.headers.get('X-User-ID', 'user-1')  # Temporary
+        
+        # Validate request format
+        validation_error = handle_request_validation(request, required_json=True)
+        if validation_error:
+            return validation_error
+        
+        request_data = request.get_json()
+        
+        # Validate request data using Pydantic model
+        try:
+            update_request = CreatePostRequest(**request_data)
+        except ValidationError as e:
+            return create_validation_error_response(e.errors())
+        
+        # Process update request
+        result = PostService.update_post(post_id, update_request, user_id)
+        
+        if result.success:
+            return create_success_response(result.message, result.data, 200)
+        else:
+            return create_bad_request_response(result.message, result.details)
+        
+    except Exception as e:
+        return create_internal_error_response(str(e))
+
+
+@posts_bp.route('/posts/<post_id>', methods=['DELETE'])
+def delete_post(post_id):
+    """
+    Delete a post.
+    
+    Args:
+        post_id (str): The unique identifier of the post to delete
+        
+    Returns:
+        JSON response with success message or error
+    """
+    try:
+        # TODO: Add authentication check to get user_id
+        user_id = request.headers.get('X-User-ID', 'user-1')  # Temporary
+        
+        # Process delete request
+        result = PostService.delete_post(post_id, user_id)
+        
+        if result.success:
+            return create_success_response(result.message, {}, 200)
+        else:
+            return create_bad_request_response(result.message, result.details)
+        
+    except Exception as e:
+        return create_internal_error_response(str(e))
+
+
 @posts_bp.route('/posts/<post_id>/like', methods=['POST'])
 def like_post(post_id):
     """
@@ -122,27 +193,101 @@ def like_post(post_id):
         JSON response with success message or error
     """
     try:
-        # Validate request format
-        validation_error = handle_request_validation(request, required_json=True)
-        if validation_error:
-            return validation_error
-        
-        request_data = request.get_json()
-        
-        # Validate request data using Pydantic model
-        try:
-            like_request = LikePostRequest(**request_data)
-        except ValidationError as e:
-            return create_validation_error_response(e.errors())
+        # TODO: Add authentication check to get user_id
+        user_id = request.headers.get('X-User-ID', 'user-1')  # Temporary
         
         # Process like request
-        result = PostService.like_post(post_id, like_request)
+        result = PostService.like_post(post_id, user_id)
         
         if result.success:
             return create_success_response(result.message, result.data, 200)
         else:
             return create_bad_request_response(result.message, result.details)
             
+    except Exception as e:
+        return create_internal_error_response(str(e))
+
+
+@posts_bp.route('/posts/<post_id>/unlike', methods=['POST'])
+def unlike_post(post_id):
+    """
+    Unlike a specific post.
+    
+    Args:
+        post_id (str): The unique identifier of the post to unlike
+        
+    Returns:
+        JSON response with success message or error
+    """
+    try:
+        # TODO: Add authentication check to get user_id
+        user_id = request.headers.get('X-User-ID', 'user-1')  # Temporary
+        
+        # Process unlike request
+        result = PostService.unlike_post(post_id, user_id)
+        
+        if result.success:
+            return create_success_response(result.message, result.data, 200)
+        else:
+            return create_bad_request_response(result.message, result.details)
+        
+    except Exception as e:
+        return create_internal_error_response(str(e))
+
+
+@posts_bp.route('/posts/<post_id>/comments', methods=['GET'])
+def get_post_comments(post_id):
+    """
+    Get comments for a specific post.
+    
+    Args:
+        post_id (str): The unique identifier of the post
+        
+    Returns:
+        JSON response with comments or error message
+    """
+    try:
+        comments = PostService.get_post_comments(post_id)
+        return format_list_response(comments, resource_name="comments")
+        
+    except Exception as e:
+        return create_internal_error_response(str(e))
+
+
+@posts_bp.route('/posts/<post_id>/comments', methods=['POST'])
+def add_post_comment(post_id):
+    """
+    Add a comment to a specific post.
+    
+    Args:
+        post_id (str): The unique identifier of the post
+        
+    Returns:
+        JSON response with success message or error
+    """
+    try:
+        # TODO: Add authentication check to get user_id
+        user_id = request.headers.get('X-User-ID', 'user-1')  # Temporary
+        
+        # Validate request format
+        validation_error = handle_request_validation(request, required_json=True)
+        if validation_error:
+            return validation_error
+        
+        request_data = request.get_json()
+        comment_content = request_data.get('comment', '').strip()
+        
+        if not comment_content:
+            return create_bad_request_response("Comment content is required")
+        
+        # Process add comment request
+        result = PostService.add_comment(post_id, user_id, comment_content)
+        
+        if result.success:
+            return create_success_response(result.message, result.data, 201)
+        else:
+            return create_bad_request_response(result.message, result.details)
+        
     except Exception as e:
         return create_internal_error_response(str(e))
 

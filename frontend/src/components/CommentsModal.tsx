@@ -20,21 +20,31 @@ interface CommentsModalProps {
   onClose: () => void;
   postTitle: string;
   comments: Comment[];
+  onAddComment?: (comment: string) => Promise<void>;
 }
 
-const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, postTitle, comments }) => {
+const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, postTitle, comments, onAddComment }) => {
   const { state } = useAuth();
   const [newComment, setNewComment] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isOpen) return null;
 
-  const handleSubmitComment = (e: React.FormEvent) => {
+  const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newComment.trim()) return;
+    if (!newComment.trim() || isSubmitting) return;
 
-    // Here you would typically send the comment to your API
-    console.log('Submitting comment:', newComment);
-    setNewComment('');
+    setIsSubmitting(true);
+    try {
+      if (onAddComment) {
+        await onAddComment(newComment);
+        setNewComment('');
+      }
+    } catch (error) {
+      console.error('Failed to submit comment:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -134,11 +144,15 @@ const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, postTitl
                 />
                 <button
                   type="submit"
-                  disabled={!newComment.trim()}
+                  disabled={!newComment.trim() || isSubmitting}
                   className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1.5 sm:p-2 bg-primary-500 hover:bg-primary-600 disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg sm:rounded-xl transition-all duration-200 flex items-center justify-center disabled:opacity-50 hover:scale-105 active:scale-95"
                   aria-label="Send comment"
                 >
-                  <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  {isSubmitting ? (
+                    <div className="animate-spin rounded-full h-3.5 w-3.5 sm:h-4 sm:w-4 border-b-2 border-white"></div>
+                  ) : (
+                    <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  )}
                 </button>
               </div>
             </div>
