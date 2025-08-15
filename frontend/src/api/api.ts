@@ -13,6 +13,7 @@ import type {
   ResetPasswordRequest,
   ChangePasswordRequest,
   SignupRequest,
+  SimpleSignupRequest,
   UpdateProfileRequest,
   AuthResponse
 } from './types';
@@ -268,6 +269,7 @@ export const authApi = {
       if (data.phone) formData.append('phone', data.phone);
       formData.append('major', data.major);
       formData.append('year_of_study', data.yearOfStudy);
+      formData.append('user_role', data.userRole);
       if (data.bio) formData.append('bio', data.bio);
       if (data.profilePicture) formData.append('profile_picture', data.profilePicture);
       

@@ -67,6 +67,7 @@ export interface SignupRequest {
   phone?: string;
   major: string;
   yearOfStudy: string;
+  userRole: string;
   bio?: string;
   profilePicture?: File | null;
 }

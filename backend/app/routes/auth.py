@@ -7,6 +7,7 @@ including OTP sending, verification, login, and logout functionality.
 
 from flask import Blueprint, request
 from pydantic import BaseModel, EmailStr, Field, ValidationError
+from typing import Optional
 from app.services.auth_service import AuthService
 from app.services.email_service import EmailService
 from app.utils.helpers import (
@@ -85,12 +86,12 @@ class CompleteSignupRequest(BaseModel):
     """Request schema for complete user signup with profile information."""
     email: EmailStr
     password: str = Field(..., min_length=8, max_length=128)
-    first_name: str = Field(..., min_length=1, max_length=100)
-    last_name: str = Field(..., min_length=1, max_length=100)
+    first_name: str = Field(..., min_length=1, max_length=100, alias="firstName")
+    last_name: str = Field(..., min_length=1, max_length=100, alias="lastName")
     phone: Optional[str] = Field(None, max_length=20)
     major: str = Field(..., min_length=1, max_length=100)
-    year_of_study: str = Field(..., min_length=1, max_length=20)
-    user_role: str = Field(..., pattern="^(student|teacher|management)$", description="User role identifier")
+    year_of_study: str = Field(..., min_length=1, max_length=20, alias="yearOfStudy")
+    user_role: str = Field(..., pattern="^(student|teacher|management)$", description="User role identifier", alias="userRole")
     bio: Optional[str] = Field(None, max_length=500)
     
     class Config:
@@ -503,6 +504,7 @@ def complete_signup():
             'phone': signup_request.phone,
             'major': signup_request.major,
             'year_of_study': signup_request.year_of_study,
+            'user_role': signup_request.user_role,
             'bio': signup_request.bio
         }
         

@@ -26,25 +26,24 @@ const Navbar: React.FC = () => {
   };
 
   // Navigation items as modular components
-  const NavItem = ({ 
-    to, 
-    icon, 
+  const NavItem = ({
+    to,
+    icon,
     children,
     mobile = false
-  }: { 
-    to: string; 
-    icon: React.ReactNode; 
+  }: {
+    to: string;
+    icon: React.ReactNode;
     children: React.ReactNode;
     mobile?: boolean;
   }) => (
     <Link
       to={to}
       onClick={closeMobileMenu}
-      className={`${mobile ? 'flex items-center px-3 py-2 rounded-lg text-base font-medium' : 'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium'} transition-colors duration-200 ${
-        isActive(to)
+      className={`${mobile ? 'flex items-center px-3 py-2 rounded-lg text-base font-medium' : 'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium'} transition-colors duration-200 ${isActive(to)
           ? 'border-primary-500 text-gray-900 dark:text-white'
           : 'border-transparent text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-100 hover:border-gray-300 dark:hover:border-gray-600'
-      }`}
+        }`}
     >
       {icon}
       <span className={mobile ? 'ml-3' : 'mr-2'}>{children}</span>
@@ -59,13 +58,6 @@ const Navbar: React.FC = () => {
       >
         <LogIn className="w-4 h-4 mr-1" />
         Sign in
-      </Link>
-      <Link
-        to="/auth"
-        className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors duration-200"
-      >
-        <UserPlus className="w-4 h-4 mr-1" />
-        Sign up
       </Link>
     </div>
   );
@@ -86,7 +78,7 @@ const Navbar: React.FC = () => {
               <span className="text-lg font-bold text-gray-900 dark:text-white">CampusConnect</span>
             </Link>
           </div>
-          
+
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-4">
             <NavItem to="/" icon={<Home className="w-4 h-4" />}>
@@ -103,11 +95,11 @@ const Navbar: React.FC = () => {
                 Profile
               </NavItem>
             )}
-            
+
             <div className="mx-2">
               <ThemeToggle />
             </div>
-            
+
             {/* Authentication Section */}
             {state.user ? <UserMenu /> : <AuthButtons />}
           </div>
@@ -146,22 +138,22 @@ const Navbar: React.FC = () => {
                   Profile
                 </NavItem>
               )}
-              
+
               {/* Mobile Authentication Section */}
               {state.user ? (
                 <div className="border-t border-gray-200 dark:border-gray-700 pt-3 mt-3">
                   <div className="flex items-center px-3 py-2 mb-2">
                     <Avatar
                       src={state.user.profile_picture}
-                      name={`${state.user.first_name || ''} ${state.user.last_name || ''}`.trim() || 
-                            state.user.email.split('@')[0].replace('.', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                      name={`${state.user.first_name || ''} ${state.user.last_name || ''}`.trim() ||
+                        state.user.email.split('@')[0].replace('.', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                       size="sm"
                       className="mr-3"
                     />
                     <div>
                       <p className="text-sm font-medium text-gray-900 dark:text-white">
-                        {`${state.user.first_name || ''} ${state.user.last_name || ''}`.trim() || 
-                         state.user.email.split('@')[0].replace('.', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                        {`${state.user.first_name || ''} ${state.user.last_name || ''}`.trim() ||
+                          state.user.email.split('@')[0].replace('.', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                       </p>
                       <p className="text-xs text-gray-500 dark:text-gray-400">{state.user.email}</p>
                     </div>

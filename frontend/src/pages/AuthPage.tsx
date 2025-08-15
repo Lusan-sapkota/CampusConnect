@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { LoginForm } from '../components/auth/LoginForm';
 import { ForgotPasswordForm } from '../components/auth/ForgotPasswordForm';
-import { SignupForm } from '../components/auth/SignupForm';
 import CompleteSignupForm from '../components/auth/CompleteSignupForm';
 
 type AuthView = 'login' | 'signup' | 'complete-signup' | 'forgot-password';
@@ -21,10 +20,6 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
     setCurrentView('complete-signup'); // Use the complete signup form by default
   };
 
-  const handleShowSimpleSignup = () => {
-    setCurrentView('signup');
-  };
-
   const handleShowForgotPassword = () => {
     setCurrentView('forgot-password');
   };
@@ -35,10 +30,21 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">CampusConnect</h1>
-          <p className="text-gray-600 dark:text-gray-400">Connect with your campus community</p>
+      <div className={currentView === 'complete-signup' ? "sm:mx-auto sm:w-full sm:max-w-4xl" : "sm:mx-auto sm:w-full sm:max-w-md"}>
+        <div className="text-center mb-8">
+          {currentView === 'complete-signup' ? (
+            <>
+              <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Join CampusConnect</h2>
+              <p className="text-gray-600 dark:text-gray-300">
+                Create your profile and connect with your campus community
+              </p>
+            </>
+          ) : (
+            <>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">CampusConnect</h1>
+              <p className="text-gray-600 dark:text-gray-400">Connect with your campus community</p>
+            </>
+          )}
         </div>
       </div>
 
@@ -48,13 +54,6 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
             onSuccess={handleAuthSuccess}
             onForgotPassword={handleShowForgotPassword}
             onShowSignup={handleShowSignup}
-          />
-        )}
-
-        {currentView === 'signup' && (
-          <SignupForm
-            onSuccess={handleBackToLogin}
-            onBackToLogin={handleBackToLogin}
           />
         )}
 

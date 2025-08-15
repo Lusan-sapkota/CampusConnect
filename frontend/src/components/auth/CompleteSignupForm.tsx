@@ -3,6 +3,74 @@ import { Eye, EyeOff, Upload, X, User, Mail, Phone, BookOpen, Calendar, FileText
 import { useAuth } from '../../contexts/AuthContext';
 import { OTPInput } from './OTPInput';
 
+interface OTPVerificationFormProps {
+  onComplete: (otp: string) => Promise<void>;
+  onResend: () => Promise<boolean>;
+  isLoading: boolean;
+  error: string | null;
+}
+
+const OTPVerificationForm: React.FC<OTPVerificationFormProps> = ({ onComplete, onResend, isLoading, error }) => {
+  const [otp, setOtp] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (otp.length === 6) {
+      setIsSubmitting(true);
+      await onComplete(otp);
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleResend = async () => {
+    setOtp('');
+    await onResend();
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <OTPInput
+        value={otp}
+        onChange={setOtp}
+        length={6}
+        autoFocus
+        disabled={isSubmitting || isLoading}
+      />
+      
+      {error && (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+          <p className="text-red-600 dark:text-red-400 text-sm text-center">{error}</p>
+        </div>
+      )}
+
+      <button
+        type="submit"
+        disabled={otp.length !== 6 || isSubmitting || isLoading}
+        className="w-full bg-primary-500 hover:bg-primary-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center"
+      >
+        {isSubmitting || isLoading ? (
+          <>
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+            Verifying...
+          </>
+        ) : (
+          'Verify Code'
+        )}
+      </button>
+
+      <button
+        type="button"
+        onClick={handleResend}
+        disabled={isLoading}
+        className="w-full text-primary-500 hover:text-primary-600 dark:text-primary-400 dark:hover:text-primary-300 font-medium py-2"
+      >
+        Resend verification code
+      </button>
+    </form>
+  );
+};
+
 interface CompleteSignupFormProps {
   onSuccess?: () => void;
   onSwitchToLogin?: () => void;
@@ -24,7 +92,7 @@ interface SignupFormData {
 }
 
 const CompleteSignupForm: React.FC<CompleteSignupFormProps> = ({ onSuccess, onSwitchToLogin }) => {
-  const { state, completeSignup, clearError } = useAuth();
+  const { state, completeSignup } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [currentStep, setCurrentStep] = useState<'form' | 'otp' | 'success'>('form');
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -204,7 +272,11 @@ const CompleteSignupForm: React.FC<CompleteSignupFormProps> = ({ onSuccess, onSw
       profilePicture: formData.profilePicture,
     };
 
-    const success = await completeSignup(signupData, otp);
+    const signupDataWithRole = {
+      ...signupData,
+      userRole: formData.userRole
+    };
+    const success = await completeSignup(signupDataWithRole, otp);
     if (success) {
       setCurrentStep('success');
       setTimeout(() => {
@@ -227,7 +299,7 @@ const CompleteSignupForm: React.FC<CompleteSignupFormProps> = ({ onSuccess, onSw
           </p>
         </div>
 
-        <OTPInput
+        <OTPVerificationForm
           onComplete={handleOTPVerification}
           onResend={() => completeSignup({
             email: formData.email,
@@ -237,6 +309,7 @@ const CompleteSignupForm: React.FC<CompleteSignupFormProps> = ({ onSuccess, onSw
             phone: formData.phone,
             major: formData.major,
             yearOfStudy: formData.yearOfStudy,
+            userRole: formData.userRole,
             bio: formData.bio,
             profilePicture: formData.profilePicture,
           })}
@@ -272,12 +345,6 @@ const CompleteSignupForm: React.FC<CompleteSignupFormProps> = ({ onSuccess, onSw
 
   return (
     <div className="max-w-2xl mx-auto">
-      <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Join CampusConnect</h2>
-        <p className="text-gray-600 dark:text-gray-300">
-          Create your profile and connect with your campus community
-        </p>
-      </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Profile Picture Section */}
