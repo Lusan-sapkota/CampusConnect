@@ -13,6 +13,8 @@ import HomePage from './pages/HomePage';
 import GroupsPage from './pages/GroupsPage';
 import EventsPage from './pages/EventsPage';
 import EventDetailsPage from './pages/EventDetailsPage';
+import TermsPage from './pages/TermsPage';
+import PolicyPage from './pages/PolicyPage';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import lenisManager from './utils/lenis';
 
@@ -38,12 +40,12 @@ const AppContent: React.FC = () => {
           <Route path="/groups" element={<GroupsPage />} />
           <Route path="/events" element={<EventsPage />} />
           <Route path="/event/:id" element={<EventDetailsPage />} />
-          
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/policy" element={<PolicyPage />} />
           {/* Auth routes */}
           <Route path="/auth" element={<AuthPage />} />
           <Route path="/login" element={<AuthPage />} />
           <Route path="/signup" element={<AuthPage />} />
-          
           {/* Protected routes - require authentication */}
           <Route 
             path="/profile" 
