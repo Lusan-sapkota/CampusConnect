@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Features - Campus Connect</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../css/style.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Features";
+        var mkdocs_page_input_path = "features\\index.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> Campus Connect
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../api/">API</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../assets/">Assets</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../author/">Author</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../api/">API</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../development/">Development</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../faq/">FAQ</a>
+                </li>
+              </ul>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="#">Features</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#features">🚀 Features</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#file-structure">📁 File Structure</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#backend-endpoints">🔧 Backend Endpoints</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#usage-examples">🎯 Usage Examples</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#basic-authentication-flow">Basic Authentication Flow</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#using-otp-hook">Using OTP Hook</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#protected-routes">Protected Routes</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#security-features">🔐 Security Features</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#session-management">Session Management</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#otp-security">OTP Security</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#error-handling">Error Handling</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#ui-components">🎨 UI Components</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#loginform">LoginForm</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#forgotpasswordform">ForgotPasswordForm</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#otpinput">OTPInput</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#userprofile">UserProfile</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#state-management">🔄 State Management</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#actions">Actions</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#testing">🧪 Testing</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#getting-started">🚀 Getting Started</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#configuration">🔧 Configuration</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#api-base-url">API Base URL</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#otp-length">OTP Length</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#troubleshooting">🐛 Troubleshooting</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#common-issues">Common Issues</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#debug-information">Debug Information</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#api-types">📝 API Types</a>
+    </li>
+    </ul>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../futurechanges/">Future Changes</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../images/">Images</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="" href="../installation/index.md">Installation</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../license/">License</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../safety/">Safety</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../search/">Search</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../uninstall/">Uninstall</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../usage/">Usage</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">Campus Connect</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Features</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="campusconnect-authentication-system">CampusConnect Authentication System</h1>
+<p>This document describes the comprehensive authentication system implemented for CampusConnect, including OTP-based login, password reset, and session management.</p>
+<h2 id="features">🚀 Features</h2>
+<ul>
+<li><strong>OTP-based Authentication</strong>: Secure email-based login without passwords</li>
+<li><strong>Password Reset</strong>: Complete forgot password flow with OTP verification</li>
+<li><strong>Session Management</strong>: JWT-like session tokens with automatic expiration</li>
+<li><strong>React Context</strong>: Centralized authentication state management</li>
+<li><strong>Custom Hooks</strong>: Reusable hooks for OTP and password reset flows</li>
+<li><strong>TypeScript Support</strong>: Full type safety throughout the system</li>
+<li><strong>Responsive UI</strong>: Mobile-friendly authentication components</li>
+<li><strong>Error Handling</strong>: Comprehensive error handling and user feedback</li>
+</ul>
+<h2 id="file-structure">📁 File Structure</h2>
+<pre><code>frontend/src/
+├── api/
+│   ├── api.ts              # Main API client with auth endpoints
+│   ├── types.ts            # TypeScript type definitions
+│   └── index.ts            # API exports
+├── contexts/
+│   └── AuthContext.tsx     # Authentication context provider
+├── hooks/
+│   ├── useOTP.ts          # OTP management hook
+│   ├── usePasswordReset.ts # Password reset flow hook
+│   └── index.ts           # Hook exports
+├── components/auth/
+│   ├── LoginForm.tsx      # Login form with OTP
+│   ├── ForgotPasswordForm.tsx # Password reset form
+│   ├── OTPInput.tsx       # Reusable OTP input component
+│   ├── ProtectedRoute.tsx # Route protection component
+│   ├── UserProfile.tsx    # User profile management
+│   └── index.ts           # Component exports
+├── pages/
+│   ├── AuthPage.tsx       # Main authentication page
+│   └── AuthDemoPage.tsx   # Demo/testing page
+└── auth-system-README.md  # This documentation
+</code></pre>
+<h2 id="backend-endpoints">🔧 Backend Endpoints</h2>
+<p>The system connects to the following Flask backend endpoints:</p>
+<ul>
+<li><code>POST /api/auth/send-otp</code> - Send OTP to email</li>
+<li><code>POST /api/auth/verify-otp</code> - Verify OTP code</li>
+<li><code>POST /api/auth/login</code> - Login with email and OTP</li>
+<li><code>POST /api/auth/logout</code> - Logout and invalidate session</li>
+<li><code>POST /api/auth/reset-password</code> - Reset password with OTP</li>
+<li><code>GET /api/auth/profile</code> - Get current user profile</li>
+</ul>
+<h2 id="usage-examples">🎯 Usage Examples</h2>
+<h3 id="basic-authentication-flow">Basic Authentication Flow</h3>
+<pre><code class="language-tsx">import { useAuth } from '../contexts/AuthContext';
+
+function MyComponent() {
+  const { state, login, logout } = useAuth();
+
+  if (state.isLoading) {
+    return &lt;div&gt;Loading...&lt;/div&gt;;
+  }
+
+  if (!state.isAuthenticated) {
+    return &lt;AuthPage /&gt;;
+  }
+
+  return (
+    &lt;div&gt;
+      &lt;p&gt;Welcome, {state.user?.email}!&lt;/p&gt;
+      &lt;button onClick={logout}&gt;Sign Out&lt;/button&gt;
+    &lt;/div&gt;
+  );
+}
+</code></pre>
+<h3 id="using-otp-hook">Using OTP Hook</h3>
+<pre><code class="language-tsx">import { useOTP } from '../hooks/useOTP';
+
+function OTPExample() {
+  const { state, sendOTP, verifyOTP } = useOTP();
+
+  const handleSendOTP = async () =&gt; {
+    const success = await sendOTP({
+      email: 'user@example.com',
+      purpose: 'authentication'
+    });
+
+    if (success) {
+      console.log('OTP sent successfully');
+    }
+  };
+
+  return (
+    &lt;div&gt;
+      &lt;button onClick={handleSendOTP} disabled={state.isLoading}&gt;
+        {state.isLoading ? 'Sending...' : 'Send OTP'}
+      &lt;/button&gt;
+      {state.error &amp;&amp; &lt;p className=&quot;error&quot;&gt;{state.error}&lt;/p&gt;}
+    &lt;/div&gt;
+  );
+}
+</code></pre>
+<h3 id="protected-routes">Protected Routes</h3>
+<pre><code class="language-tsx">import { ProtectedRoute } from '../components/auth/ProtectedRoute';
+
+function App() {
+  return (
+    &lt;Routes&gt;
+      &lt;Route path=&quot;/public&quot; element={&lt;PublicPage /&gt;} /&gt;
+      &lt;Route 
+        path=&quot;/private&quot; 
+        element={
+          &lt;ProtectedRoute&gt;
+            &lt;PrivatePage /&gt;
+          &lt;/ProtectedRoute&gt;
+        } 
+      /&gt;
+    &lt;/Routes&gt;
+  );
+}
+</code></pre>
+<h2 id="security-features">🔐 Security Features</h2>
+<h3 id="session-management">Session Management</h3>
+<ul>
+<li>Session tokens are stored in localStorage</li>
+<li>Automatic token validation on app startup</li>
+<li>Token expiration handling</li>
+<li>Secure logout with server-side session invalidation</li>
+</ul>
+<h3 id="otp-security">OTP Security</h3>
+<ul>
+<li>Time-limited OTP codes (configurable expiration)</li>
+<li>Rate limiting for OTP requests</li>
+<li>Secure OTP generation and validation</li>
+<li>Purpose-specific OTP verification (auth vs password reset)</li>
+</ul>
+<h3 id="error-handling">Error Handling</h3>
+<ul>
+<li>Custom ApiError class for detailed error information</li>
+<li>User-friendly error messages</li>
+<li>Network error handling</li>
+<li>Validation error display</li>
+</ul>
+<h2 id="ui-components">🎨 UI Components</h2>
+<h3 id="loginform">LoginForm</h3>
+<ul>
+<li>Email input with validation</li>
+<li>OTP input with auto-focus and paste support</li>
+<li>Loading states and error handling</li>
+<li>Responsive design</li>
+</ul>
+<h3 id="forgotpasswordform">ForgotPasswordForm</h3>
+<ul>
+<li>Multi-step password reset flow</li>
+<li>Email → OTP → New Password → Success</li>
+<li>Form validation and error handling</li>
+<li>Step navigation controls</li>
+</ul>
+<h3 id="otpinput">OTPInput</h3>
+<ul>
+<li>Configurable length (default 6 digits)</li>
+<li>Auto-focus and navigation between inputs</li>
+<li>Paste support for OTP codes</li>
+<li>Keyboard navigation (arrow keys, backspace)</li>
+<li>Disabled state support</li>
+</ul>
+<h3 id="userprofile">UserProfile</h3>
+<ul>
+<li>Display user information</li>
+<li>Password change functionality</li>
+<li>Session management</li>
+<li>Logout functionality</li>
+</ul>
+<h2 id="state-management">🔄 State Management</h2>
+<p>The authentication system uses React Context for state management:</p>
+<pre><code class="language-tsx">interface AuthState {
+  user: AuthUser | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  error: string | null;
+}
+</code></pre>
+<h3 id="actions">Actions</h3>
+<ul>
+<li><code>AUTH_START</code> - Begin authentication process</li>
+<li><code>AUTH_SUCCESS</code> - Authentication successful</li>
+<li><code>AUTH_ERROR</code> - Authentication failed</li>
+<li><code>AUTH_LOGOUT</code> - User logged out</li>
+<li><code>CLEAR_ERROR</code> - Clear error state</li>
+</ul>
+<h2 id="testing">🧪 Testing</h2>
+<p>Visit <code>/auth-demo</code> when authenticated to test:
+- API endpoint connectivity
+- Authentication state debugging
+- User profile management
+- Error handling scenarios</p>
+<h2 id="getting-started">🚀 Getting Started</h2>
+<ol>
+<li><strong>Wrap your app with AuthProvider</strong>:</li>
+</ol>
+<pre><code class="language-tsx">import { AuthProvider } from './contexts/AuthContext';
+
+function App() {
+  return (
+    &lt;AuthProvider&gt;
+      &lt;YourApp /&gt;
+    &lt;/AuthProvider&gt;
+  );
+}
+</code></pre>
+<ol>
+<li><strong>Use authentication in components</strong>:</li>
+</ol>
+<pre><code class="language-tsx">import { useAuth } from './contexts/AuthContext';
+
+function MyComponent() {
+  const { state, login, logout } = useAuth();
+  // Use authentication state and methods
+}
+</code></pre>
+<ol>
+<li><strong>Protect routes</strong>:</li>
+</ol>
+<pre><code class="language-tsx">import { ProtectedRoute } from './components/auth/ProtectedRoute';
+
+&lt;ProtectedRoute&gt;
+  &lt;YourProtectedComponent /&gt;
+&lt;/ProtectedRoute&gt;
+</code></pre>
+<h2 id="configuration">🔧 Configuration</h2>
+<h3 id="api-base-url">API Base URL</h3>
+<p>Update the API base URL in <code>frontend/src/api/api.ts</code>:</p>
+<pre><code class="language-tsx">const API_BASE = 'http://localhost:5000/api';
+</code></pre>
+<h3 id="otp-length">OTP Length</h3>
+<p>Configure OTP input length in components:</p>
+<pre><code class="language-tsx">&lt;OTPInput length={6} value={otp} onChange={setOtp} /&gt;
+</code></pre>
+<h2 id="troubleshooting">🐛 Troubleshooting</h2>
+<h3 id="common-issues">Common Issues</h3>
+<ol>
+<li><strong>CORS Errors</strong>: Ensure backend CORS is configured for your frontend URL</li>
+<li><strong>Token Expiration</strong>: Check if session tokens are being properly stored and sent</li>
+<li><strong>OTP Not Received</strong>: Verify email service configuration in backend</li>
+<li><strong>Network Errors</strong>: Check if backend server is running and accessible</li>
+</ol>
+<h3 id="debug-information">Debug Information</h3>
+<p>Use the AuthDemoPage (<code>/auth-demo</code>) to:
+- View current authentication state
+- Test API endpoints
+- Debug session management
+- Check error handling</p>
+<h2 id="api-types">📝 API Types</h2>
+<p>```tsx
+interface AuthUser {
+  user_id: string;
+  email: string;
+  session_token: string;
+}</p>
+<p>interface SendOTPRequest {
+  email: string;
+  user_name?: string;
+  purpose</p>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../faq/" class="btn btn-neutral float-left" title="FAQ"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../futurechanges/" class="btn btn-neutral float-right" title="Future Changes">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../faq/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../futurechanges/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
